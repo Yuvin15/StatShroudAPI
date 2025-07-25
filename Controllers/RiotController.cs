@@ -423,7 +423,7 @@ namespace API.Controllers
                     Item4 = subItem.item3,
                     Item5 = subItem.item4,
                     Item6 = subItem.item5,
-                    Item7 = subItem.item6
+                    Ward = subItem.item6
                 };
 
                 var playerDetails = new PlayerMatchDetails

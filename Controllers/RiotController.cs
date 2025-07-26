@@ -406,6 +406,22 @@ namespace API.Controllers
                 List<Selection> mainRunePath = subItem.perks.styles[0].selections;
                 List<Selection> secondRunePath = subItem.perks.styles[1].selections;
 
+                Runes playerRunes = new Runes
+                {
+                    KeyStone = mainRunePath[0].perk,
+                    PrimaryRune1 = mainRunePath[1].perk,
+                    PrimaryRune2 = mainRunePath[2].perk,
+                    PrimaryRune3 = mainRunePath[3].perk,
+
+                    SecondaryRune1 = secondRunePath[0].perk,
+                    SecondaryRune2 = secondRunePath[1].perk,
+
+                    RuneShard1 = subItem.perks.statPerks.offense,
+                    RuneShard2 = subItem.perks.statPerks.flex,
+                    RuneShard3 = subItem.perks.statPerks.defense
+
+                };
+
                 //Runes playerRunes = new Runes
                 //{
                 //    RuneShard1 = subItem.perks.statPerks.offense,

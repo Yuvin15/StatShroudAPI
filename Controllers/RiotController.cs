@@ -422,7 +422,7 @@ namespace API.Controllers
             return totalPoroPopped;
         }
 
-        [HttpGet("GetSingleMatchDetails")]
+        [HttpGet("GetSingleMatchDetailsForNormals")]
         public async Task<List<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
@@ -477,7 +477,7 @@ namespace API.Controllers
                 if (subItem.teamId == 100)
                 {
                     teamName = "Blue Team";
-                } 
+                }
                 else
                 {
                     teamName = "Red Team";
@@ -522,6 +522,8 @@ namespace API.Controllers
                     ChampionName = subItem.championName,
                     LaneName = subItem.individualPosition,
                     KDA = KDA,
+                    GoldSpent = subItem.goldSpent,
+                    GoldEarned = subItem.goldEarned,
                     Damage = subItem.totalDamageDealtToChampions,
                     DamageTaken = subItem.totalDamageTaken,
                     TowerDamage = subItem.damageDealtToTurrets,
@@ -543,10 +545,99 @@ namespace API.Controllers
                 Players = playersInMatch
             };
             newMatchData.Add(matchStats);
-        
+
             return newMatchData;
 
         }
 
+        [HttpGet("GetSingleMatchDetailsForSpecials")]
+        public async Task<List<SpecialGamemodeStats>> GetSpecialMatchDetails(string region, string matchID) 
+        {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
+            var newMatchData = new List<SpecialGamemodeStats>();
+            string gameMode = "";
+
+            var playersInMatch = new List<SpecialPlayerDetails>();
+
+            var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
+            var matchDataRequest = new RestRequest("", Method.Get);
+            matchDataRequest.AddHeader("X-Riot-Token", api);
+            var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
+            var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
+            
+            foreach (var item in matchDataResponse.info.participants)
+            {
+                string KDA = $"{item.kills}/{item.deaths}/{item.assists}";
+
+                Items playerItems = new Items
+                {
+                    Item1 = item.item0,
+                    Item2 = item.item1,
+                    Item3 = item.item2,
+                    Item4 = item.item3,
+                    Item5 = item.item4,
+                    Item6 = item.item5,
+                    Ward = item.item6
+                };
+
+                Augments playerAugments = new Augments
+                {
+                    Augments1 = item.playerAugment1,
+                    Augments2 = item.playerAugment2,
+                    Augments3 = item.playerAugment3,
+                    Augments4 = item.playerAugment4,
+                    Augments5 = item.playerAugment5,
+                    Augments6 = item.playerAugment6
+                };
+
+                var playerDetails = new SpecialPlayerDetails
+                {
+                    PlayerName = item.riotIdGameName,
+                    PlayerTeamPosition = item.placement,
+                    PlayerTeam = item.playerSubteamId,
+                    ChampionName = item.championName,
+                    KDA = KDA,
+                    GoldSpent = item.goldSpent,
+                    GoldEarned = item.goldEarned,
+                    Damage = item.totalDamageDealtToChampions,
+                    DamageTaken = item.totalDamageTaken,
+                    SkillshotsHit = item.challenges.skillshotsHit,
+                    SkillshotsMissed = item.challenges.skillshotsDodged,
+                    HealShield = Math.Round(item.challenges.effectiveHealAndShielding),
+                    Items = playerItems,
+                    Augments = playerAugments
+                };
+                playersInMatch.Add(playerDetails);
+            }
+
+            var matchStats = new SpecialGamemodeStats
+            {
+                GameID = matchDataResponse.metadata.matchId,
+                GameMode = matchDataResponse.info.gameMode,
+                SpecialGamePlayerStats = playersInMatch
+            };
+            newMatchData.Add(matchStats);
+
+            return newMatchData;
+        }
     }
 }

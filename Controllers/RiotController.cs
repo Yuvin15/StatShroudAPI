@@ -21,6 +21,26 @@ namespace API.Controllers
         [HttpGet("GetAccount")]
         public async Task<ActionResult<RiotAccountDetails>> NewGetAccount(string gameName, string tagLine, string region)
         {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
             request.AddHeader("X-Riot-Token", api);
@@ -56,7 +76,7 @@ namespace API.Controllers
             string didWin = "";
             string gameMode = "";
 
-            var matchUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
@@ -65,7 +85,7 @@ namespace API.Controllers
             foreach (var item in matchResponse2)
             { 
                 var playersInMatch = new List<PlayerMatchDetails>();
-                var matchDataUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/{item}");
+                var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{item}");
                 var matchDataRequest = new RestRequest("", Method.Get);
                 matchDataRequest.AddHeader("X-Riot-Token", api);
                 var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
@@ -164,6 +184,26 @@ namespace API.Controllers
         [HttpGet("GetHistory")]
         public async Task<List<MatchStatsNew>> GetMatchHistory(string gameName, string tagLine, string region)
         {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
             var allPlayerDetails = new List<MatchStats>();
             var newMatchData = new List<MatchStatsNew>();
             string didWin = "";
@@ -175,7 +215,7 @@ namespace API.Controllers
             var restResponse = await url.ExecuteAsync(request);
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
-            var matchUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
@@ -185,7 +225,7 @@ namespace API.Controllers
             {
                 var playersInMatch = new List<PlayerMatchDetails>();
 
-                var matchDataUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/{item}");
+                var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{item}");
                 var matchDataRequest = new RestRequest("", Method.Get);
                 matchDataRequest.AddHeader("X-Riot-Token", api);
                 var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
@@ -333,7 +373,27 @@ namespace API.Controllers
             var restResponse = await url.ExecuteAsync(request);
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
-            var matchUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?queue=450&start=0&count=50");
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?queue=450&start=0&count=50");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
@@ -343,7 +403,7 @@ namespace API.Controllers
             {
                 var playersInMatch = new List<PlayerMatchDetails>();
 
-                var matchDataUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/{item}");
+                var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{item}");
                 var matchDataRequest = new RestRequest("", Method.Get);
                 matchDataRequest.AddHeader("X-Riot-Token", api);
                 var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
@@ -365,13 +425,33 @@ namespace API.Controllers
         [HttpGet("GetSingleMatchDetails")]
         public async Task<List<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
         {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
             var newMatchData = new List<MatchStatsNew>();
             string didWin = "";
             string gameMode = "";
-
+                
             var playersInMatch = new List<PlayerMatchDetails>();
 
-            var matchDataUrl = new RestClient($"https://europe.api.riotgames.com/lol/match/v5/matches/{matchID}");
+            var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
             var matchDataRequest = new RestRequest("", Method.Get);
             matchDataRequest.AddHeader("X-Riot-Token", api);
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
@@ -421,13 +501,6 @@ namespace API.Controllers
                     RuneShard3 = subItem.perks.statPerks.defense
 
                 };
-
-                //Runes playerRunes = new Runes
-                //{
-                //    RuneShard1 = subItem.perks.statPerks.offense,
-                //    RuneShard2 = subItem.perks.statPerks.offense,
-                //    RuneShard3 = subItem.perks.statPerks.offense,
-                //};
 
                 // https://ddragon.leagueoflegends.com/cdn/15.14.1/img/item/1001.png Item URL for frontend
 

@@ -18,6 +18,6 @@
         public int Farm { get; set; }
         public double HealShield { get; set; }
         public Items PlayerItems { get; set; }
-        //public Runes? Runes { get; set; }
+        public Runes? Runes { get; set; }
     }
 }

@@ -2,14 +2,14 @@
 {
     public class Runes
     {
-        public int KeyStone { get; set; }
-        public int PrimaryRune1 { get; set; }
-        public int PrimaryRune2 { get; set; }
-        public int PrimaryRune3 { get; set; }
-        public int SecondaryRune1 { get; set; }
-        public int SecondaryRune2 { get; set; }
-        public int RuneShard1 { get; set; }
-        public int RuneShard2 { get; set; }
-        public int RuneShard3 { get; set; }
+        public string KeyStone { get; set; }
+        public string PrimaryRune1 { get; set; }
+        public string PrimaryRune2 { get; set; }
+        public string PrimaryRune3 { get; set; }
+        public string SecondaryRune1 { get; set; }
+        public string SecondaryRune2 { get; set; }
+        public string RuneShard1 { get; set; }
+        public string RuneShard2 { get; set; }
+        public string RuneShard3 { get; set; }
     }
 }

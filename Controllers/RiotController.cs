@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using RestSharp;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using static API.Models.MatchData;
@@ -102,6 +103,27 @@ namespace API.Controllers
             { 5013, "perk-images/StatMods/StatModsTenacityIcon.png" }      
         };
 
+        public Dictionary<int, string> SummonerSpells = new()
+        {
+            { 1, "SummonerBoost" },
+            { 3, "SummonerExhaust" },
+            { 4, "SummonerFlash" },
+            { 6, "SummonerHaste" },
+            { 7, "SummonerHeal" },
+            { 11, "SummonerSmite" },
+            { 12, "SummonerTeleport" },
+            { 13, "SummonerMana" },
+            { 14, "SummonerDot" },
+            { 21, "SummonerBarrier" },
+            { 30, "SummonerPoroRecall" },
+            { 31, "SummonerPoroThrow" },
+            { 32, "SummonerSnowball" },
+            { 39, "SummonerSnowURFSnowball_Mark" },
+            { 54, "Summoner_UltBookPlaceholder" },
+            { 55, "Summoner_UltBookSmitePlaceholder" },
+            { 2201, "SummonerCherryHold" },
+            { 2202, "SummonerCherryFlash" }
+        };
 
         [HttpGet("GetAccount")]
         public async Task<ActionResult<RiotAccountDetails>> NewGetAccount(string gameName, string tagLine, string region)
@@ -618,6 +640,8 @@ namespace API.Controllers
                     Farm = totalFarm,
                     HealShield = Math.Round(subItem.challenges.effectiveHealAndShielding),
                     PlayerItems = playerItems,
+                    SummonerSpell1 = SummonerSpells[subItem.summoner1Id],
+                    SummonerSpell2 = SummonerSpells[subItem.summoner2Id],
                     Runes = playerRunes
                 };
                 playersInMatch.Add(playerDetails);
@@ -709,6 +733,8 @@ namespace API.Controllers
                     SkillshotsMissed = item.challenges.skillshotsDodged,
                     HealShield = Math.Round(item.challenges.effectiveHealAndShielding),
                     Items = playerItems,
+                    SummonerSpell1 = SummonerSpells[item.summoner1Id],
+                    SummonerSpell2 = SummonerSpells[item.summoner2Id],
                     Augments = playerAugments
                 };
                 playersInMatch.Add(playerDetails);

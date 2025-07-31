@@ -15,6 +15,8 @@
         public int SkillshotsMissed { get; set; }
         public double HealShield { get; set; }
         public Items Items { get; set; }
+        public string SummonerSpell1 { get; set; }
+        public string SummonerSpell2 { get; set; }
         public Augments Augments { get; set; }
 
     }

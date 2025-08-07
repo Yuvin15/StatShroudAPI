@@ -531,7 +531,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetSingleMatchDetailsForNormals")]
-        public async Task<List<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
+        public async Task<MatchStatsNew> GetMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
             {
@@ -553,7 +553,7 @@ namespace API.Controllers
                 "ru" => "europe"
             };
 
-            var newMatchData = new List<MatchStatsNew>();
+            var newMatchData = new MatchStatsNew();
             string didWin = "";
             string gameMode = "";
                 
@@ -654,13 +654,13 @@ namespace API.Controllers
                 GameMode = matchDataResponse.info.gameMode,
                 Players = playersInMatch
             };
-            newMatchData.Add(matchStats);
+            newMatchData = matchStats;
 
             return newMatchData;
         }
 
         [HttpGet("GetSingleMatchDetailsForSpecials")]
-        public async Task<List<SpecialGamemodeStats>> GetSpecialMatchDetails(string region, string matchID) 
+        public async Task<SpecialGamemodeStats> GetSpecialMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
             {
@@ -682,7 +682,7 @@ namespace API.Controllers
                 "ru" => "europe"
             };
 
-            var newMatchData = new List<SpecialGamemodeStats>();
+            var newMatchData = new SpecialGamemodeStats();
             string gameMode = "";
 
             var playersInMatch = new List<SpecialPlayerDetails>();
@@ -746,7 +746,7 @@ namespace API.Controllers
                 GameMode = matchDataResponse.info.gameMode,
                 SpecialGamePlayerStats = playersInMatch
             };
-            newMatchData.Add(matchStats);
+            newMatchData = matchStats;
 
             return newMatchData;
         }

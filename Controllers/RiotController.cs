@@ -555,7 +555,8 @@ namespace API.Controllers
 
             var newMatchData = new MatchStatsNew();
             string didWin = "";
-            string gameMode = "";
+            int totalBlueTeamKills = 0;
+            int totalRedTeamKills =  0;
                 
             var playersInMatch = new List<PlayerMatchDetails>();
 
@@ -567,6 +568,9 @@ namespace API.Controllers
 
             foreach (var winnerItem in matchDataResponse.info.teams)
             {
+                totalBlueTeamKills = winnerItem.objectives.champion.kills;
+                totalRedTeamKills = winnerItem.objectives.champion.kills;
+
                 if (winnerItem.win)
                 {
                     didWin = winnerItem.teamId == 100 ? "Blue Team" : "Red Team";
@@ -652,6 +656,8 @@ namespace API.Controllers
                 GameID = matchDataResponse.metadata.matchId,
                 GameWinner = didWin,
                 GameMode = matchDataResponse.info.gameMode,
+                totalBlueKills = totalBlueTeamKills,
+                totalRedKills = totalRedTeamKills,
                 Players = playersInMatch
             };
             newMatchData = matchStats;
@@ -659,7 +665,7 @@ namespace API.Controllers
             return newMatchData;
         }
 
-        [HttpGet("GetSingleMatchDetailsForSpecials")]
+        [HttpGet("GetSingleMatchDetailsForSpecialGameModes")]
         public async Task<SpecialGamemodeStats> GetSpecialMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
@@ -693,7 +699,8 @@ namespace API.Controllers
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
             
-            foreach (var item in matchDataResponse.info.participants)
+
+            foreach (var item in matchDataResponse.info.participants.OrderBy(x => x.placement))
             {
                 string KDA = $"{item.kills}/{item.deaths}/{item.assists}";
 
@@ -746,6 +753,8 @@ namespace API.Controllers
                 GameMode = matchDataResponse.info.gameMode,
                 SpecialGamePlayerStats = playersInMatch
             };
+
+
             newMatchData = matchStats;
 
             return newMatchData;

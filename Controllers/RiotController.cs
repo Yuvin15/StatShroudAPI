@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Numerics;
 using System.Text.Json;
 using static API.Models.MatchData;
 
@@ -102,7 +104,7 @@ namespace API.Controllers
             { 5011, "perk-images/StatMods/StatModsHealthIcon.png" },       
             { 5013, "perk-images/StatMods/StatModsTenacityIcon.png" }      
         };
-
+        // AI made my life easy here
         public Dictionary<int, string> SummonerSpells = new()
         {
             { 1, "SummonerBoost" },
@@ -123,6 +125,106 @@ namespace API.Controllers
             { 55, "Summoner_UltBookSmitePlaceholder" },
             { 2201, "SummonerCherryHold" },
             { 2202, "SummonerCherryFlash" }
+        };
+        // AI made my life easy here
+        public Dictionary<int, string> queueDictionary = new Dictionary<int, string>
+        {
+            { 0, "Custom game" },
+            { 2, "Blind Pick" },
+            { 4, "Ranked Solo/Duo" },
+            { 6, "Ranked Premade" },
+            { 7, "Co-op vs AI" },
+            { 8, "3v3 Normal" },
+            { 9, "3v3 Ranked Flex" },
+            { 14, "Draft Pick" },
+            { 16, "Dominion Blind Pick" },
+            { 17, "Dominion Draft Pick" },
+            { 25, "Dominion Co-op vs AI" },
+            { 31, "Co-op vs AI Intro Bot" },
+            { 32, "Co-op vs AI Beginner Bot" },
+            { 33, "Co-op vs AI Intermediate Bot" },
+            { 41, "3v3 Ranked Team" },
+            { 42, "5v5 Ranked Team" },
+            { 52, "Co-op vs AI" },
+            { 61, "5v5 Team Builder" },
+            { 65, "5v5 ARAM" },
+            { 67, "ARAM Co-op vs AI" },
+            { 70, "One for All" },
+            { 72, "1v1 Snowdown Showdown" },
+            { 73, "2v2 Snowdown Showdown" },
+            { 75, "6v6 Hexakill" },
+            { 76, "Ultra Rapid Fire" },
+            { 78, "One For All: Mirror Mode" },
+            { 83, "Co-op vs AI Ultra Rapid Fire" },
+            { 91, "Doom Bots Rank 1" },
+            { 92, "Doom Bots Rank 2" },
+            { 93, "Doom Bots Rank 5" },
+            { 96, "Ascension" },
+            { 98, "6v6 Hexakill" },
+            { 100, "5v5 ARAM" },
+            { 300, "Legend of the Poro King" },
+            { 310, "Nemesis" },
+            { 313, "Black Market Brawlers" },
+            { 315, "Nexus Siege" },
+            { 317, "Definitely Not Dominion" },
+            { 318, "ARURF" },
+            { 325, "All Random" },
+            { 400, "Draft Pick" },
+            { 410, "Ranked Dynamic" },
+            { 420, "Ranked Solo/Duo" },
+            { 430, "Blind Pick" },
+            { 440, "Ranked Flex" },
+            { 450, "ARAM" },
+            { 460, "3v3 Blind Pick" },
+            { 470, "3v3 Ranked Flex" },
+            { 490, "Normal (Quickplay)" },
+            { 600, "Blood Hunt Assassin" },
+            { 610, "Dark Star: Singularity" },
+            { 700, "Summoner's Rift Clash" },
+            { 720, "ARAM Clash" },
+            { 800, "Co-op vs. AI Intermediate Bot" },
+            { 810, "Co-op vs. AI Intro Bot" },
+            { 820, "Co-op vs. AI Beginner Bot" },
+            { 830, "Co-op vs. AI Intro Bot" },
+            { 840, "Co-op vs. AI Beginner Bot" },
+            { 850, "Co-op vs. AI Intermediate Bot" },
+            { 870, "Co-op vs. AI Intro Bot" },
+            { 880, "Co-op vs. AI Beginner Bot" },
+            { 890, "Co-op vs. AI Intermediate Bot" },
+            { 900, "ARURF" },
+            { 910, "Ascension" },
+            { 920, "Legend of the Poro King" },
+            { 940, "Nexus Siege" },
+            { 950, "Doom Bots Voting" },
+            { 960, "Doom Bots Standard" },
+            { 980, "Star Guardian Invasion: Normal" },
+            { 990, "Star Guardian Invasion: Onslaught" },
+            { 1000, "PROJECT: Hunters" },
+            { 1010, "Snow ARURF" },
+            { 1020, "One for All" },
+            { 1030, "Odyssey Extraction: Intro" },
+            { 1040, "Odyssey Extraction: Cadet" },
+            { 1050, "Odyssey Extraction: Crewmember" },
+            { 1060, "Odyssey Extraction: Captain" },
+            { 1070, "Odyssey Extraction: Onslaught" },
+            { 1090, "Teamfight Tactics" },
+            { 1100, "Ranked Teamfight Tactics" },
+            { 1110, "Teamfight Tactics Tutorial" },
+            { 1111, "Teamfight Tactics test" },
+            { 1200, "Nexus Blitz" },
+            { 1210, "Teamfight Tactics Choncc's Treasure Mode" },
+            { 1300, "Nexus Blitz" },
+            { 1400, "Ultimate Spellbook" },
+            { 1700, "Arena" },
+            { 1710, "Arena" },
+            { 1810, "Swarm Mode" },
+            { 1820, "Swarm" },
+            { 1830, "Swarm" },
+            { 1840, "Swarm" },
+            { 1900, "Pick URF" },
+            { 2000, "Tutorial 1" },
+            { 2010, "Tutorial 2" },
+            { 2020, "Tutorial 3" }
         };
 
         [HttpGet("GetAccount")]
@@ -224,7 +326,7 @@ namespace API.Controllers
 
                 if (player.championName == "Wukong") 
                 { 
-                    champName = "Monkey King";
+                    champName = "MonkeyKing";
                 }
                 else if(player.championName == "FiddleSticks")
                 {
@@ -239,7 +341,7 @@ namespace API.Controllers
                 {
                     MatchID = matchDataResponse.metadata.matchId,
                     GameWinner = gameWinner,
-                    GameMode = matchDataResponse.info.gameMode,
+                    GameMode = queueDictionary[matchDataResponse.info.queueId],
                     ChampionName = champName ?? "Unknown",
                     Lane = player.individualPosition ?? "Unknown",
                     KDA = $"{player.kills}/{player.deaths}/{player.assists}",
@@ -378,8 +480,7 @@ namespace API.Controllers
                             ObjDamage = subItem.damageDealtToObjectives,
                             SkillshotsHit = subItem.challenges.skillshotsHit,
                             SkillshotsMissed = subItem.challenges.skillshotsDodged,
-                            Farm = totalFarm,
-                            HealShield = subItem.challenges.effectiveHealAndShielding
+                            Farm = totalFarm
                         };
                     playersInMatch.Add(playerDetails);
                 }
@@ -438,7 +539,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetFreeCharacters")]
-        public async Task<List<string>> GetFreeCharacters(string region)
+        public async Task<List<string>> GetFreeCharacters()
         {
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
@@ -454,7 +555,7 @@ namespace API.Controllers
 
             var freeToPlayName = new List<string>();
 
-            var freeToPlayUrl = new RestClient($"https://{region}.api.riotgames.com/lol/platform/v3/champion-rotations");
+            var freeToPlayUrl = new RestClient($"https://euw1.api.riotgames.com/lol/platform/v3/champion-rotations");
             var freeToPlayRequest = new RestRequest("", Method.Get);
             freeToPlayRequest.AddHeader("X-Riot-Token", api);
             var freeToPlayRestResponse = await freeToPlayUrl.ExecuteAsync(freeToPlayRequest);
@@ -617,20 +718,35 @@ namespace API.Controllers
 
                 Items playerItems = new Items
                 {
-                    Item1 = subItem.item0,
-                    Item2 = subItem.item1,
-                    Item3 = subItem.item2,
-                    Item4 = subItem.item3,
-                    Item5 = subItem.item4,
-                    Item6 = subItem.item5,
-                    Ward = subItem.item6
+                    Item1 = subItem.item0   != 0 ? subItem.item0 : null,
+                    Item2 = subItem.item1   != 0 ? subItem.item1 : null,
+                    Item3 = subItem.item2   != 0 ? subItem.item2 : null,
+                    Item4 = subItem.item3   != 0 ? subItem.item3 : null,
+                    Item5 = subItem.item4   != 0 ? subItem.item4 : null,
+                    Item6 = subItem.item5   != 0 ? subItem.item5 : null,
+                    Ward = subItem.item6    != 0 ? subItem.item6 : null
                 };
+
+                string champName;
+
+                if (subItem.championName == "Wukong")
+                {
+                    champName = "MonkeyKing";
+                }
+                else if (subItem.championName == "FiddleSticks")
+                {
+                    champName = "Fiddlesticks";
+                }
+                else
+                {
+                    champName = subItem.championName;
+                }
 
                 var playerDetails = new PlayerMatchDetails
                 {
                     PlayerName = subItem.riotIdGameName,
                     TeamID = teamName,
-                    ChampionName = subItem.championName,
+                    ChampionName = champName,
                     LaneName = subItem.individualPosition,
                     KDA = KDA,
                     GoldSpent = subItem.goldSpent,
@@ -642,7 +758,6 @@ namespace API.Controllers
                     SkillshotsHit = subItem.challenges.skillshotsHit,
                     SkillshotsMissed = subItem.challenges.skillshotsDodged,
                     Farm = totalFarm,
-                    HealShield = Math.Round(subItem.challenges.effectiveHealAndShielding),
                     PlayerItems = playerItems,
                     SummonerSpell1 = SummonerSpells[subItem.summoner1Id],
                     SummonerSpell2 = SummonerSpells[subItem.summoner2Id],
@@ -655,7 +770,7 @@ namespace API.Controllers
             {
                 GameID = matchDataResponse.metadata.matchId,
                 GameWinner = didWin,
-                GameMode = matchDataResponse.info.gameMode,
+                GameMode = queueDictionary[matchDataResponse.info.queueId],
                 totalBlueKills = totalBlueTeamKills,
                 totalRedKills = totalRedTeamKills,
                 Players = playersInMatch
@@ -706,13 +821,13 @@ namespace API.Controllers
 
                 Items playerItems = new Items
                 {
-                    Item1 = item.item0,
-                    Item2 = item.item1,
-                    Item3 = item.item2,
-                    Item4 = item.item3,
-                    Item5 = item.item4,
-                    Item6 = item.item5,
-                    Ward = item.item6
+                    Item1 = item.item0 != 0 ? item.item0 : null,
+                    Item2 = item.item1 != 0 ? item.item1 : null,
+                    Item3 = item.item2 != 0 ? item.item2 : null,
+                    Item4 = item.item3 != 0 ? item.item3 : null,
+                    Item5 = item.item4 != 0 ? item.item4 : null,
+                    Item6 = item.item5 != 0 ? item.item5 : null,
+                    Ward = item.item6  != 0 ? item.item6 : null
                 };
 
                 Augments playerAugments = new Augments
@@ -725,12 +840,27 @@ namespace API.Controllers
                     Augments6 = item.playerAugment6
                 };
 
+                string champName;
+
+                if (item.championName == "Wukong")
+                {
+                    champName = "MonkeyKing";
+                }
+                else if (item.championName == "FiddleSticks")
+                {
+                    champName = "Fiddlesticks";
+                }
+                else
+                {
+                    champName = item.championName;
+                }
+
                 var playerDetails = new SpecialPlayerDetails
                 {
                     PlayerName = item.riotIdGameName,
                     PlayerTeamPosition = item.placement,
                     PlayerTeam = item.playerSubteamId,
-                    ChampionName = item.championName,
+                    ChampionName = champName,
                     KDA = KDA,
                     GoldSpent = item.goldSpent,
                     GoldEarned = item.goldEarned,
@@ -750,7 +880,7 @@ namespace API.Controllers
             var matchStats = new SpecialGamemodeStats
             {
                 GameID = matchDataResponse.metadata.matchId,
-                GameMode = matchDataResponse.info.gameMode,
+                GameMode = queueDictionary[matchDataResponse.info.queueId],
                 SpecialGamePlayerStats = playersInMatch
             };
 

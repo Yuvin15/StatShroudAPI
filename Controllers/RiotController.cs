@@ -499,8 +499,28 @@ namespace API.Controllers
         }
 
         [HttpGet("GetTopPlayed")]
-        public async Task<List<string>> GetTopPlayed(string gameName, string tagLine, string region)
+        public async Task<List<MostPlayed>> GetTopPlayed(string gameName, string tagLine, string region)
         {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe"
+            };
+
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
@@ -514,7 +534,8 @@ namespace API.Controllers
             var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
 
             // Below is to get the stats for the player
-            var topPlayedList = new List<string>();
+            var topPlayedList = new List<MostPlayed>();
+            MostPlayed mostPlayed = new MostPlayed();
 
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
@@ -522,19 +543,28 @@ namespace API.Controllers
             var restResponse = await url.ExecuteAsync(request);
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
-            var topPlayedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{response.puuid}");
+            var topPlayedUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{response.puuid}");
             var topPlayedRequest = new RestRequest("", Method.Get);
             topPlayedRequest.AddHeader("X-Riot-Token", api);
             var topPlayedRestResponse = await topPlayedUrl.ExecuteAsync(topPlayedRequest);
-            var topPlayedResponse = JsonConvert.DeserializeObject<List<TopPlayed>>(topPlayedRestResponse.Content).Take(5);
+            var topPlayedResponse = JsonConvert.DeserializeObject<List<TopPlayed>>(topPlayedRestResponse.Content).Take(3);
 
             foreach (var item in topPlayedResponse)
             {
                 var champ = championResponse?.data.Values.FirstOrDefault(i => i.key == item.championId.ToString());
 
-                topPlayedList.Add($"{champ.name} ({item.championPoints})");
+                //topPlayedList.Add($"{champ.name} ({item.championPoints})");
+
+                mostPlayed = new MostPlayed
+                {
+                    ChampionName = champ?.name,
+                    ChampionPoints = item.championPoints
+                };
+
+                topPlayedList.Add(mostPlayed);
             }
-            
+
+
             return topPlayedList;
         }
 

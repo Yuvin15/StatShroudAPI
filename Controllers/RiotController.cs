@@ -543,7 +543,7 @@ namespace API.Controllers
             var restResponse = await url.ExecuteAsync(request);
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
-            var topPlayedUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{response.puuid}");
+            var topPlayedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{response.puuid}");
             var topPlayedRequest = new RestRequest("", Method.Get);
             topPlayedRequest.AddHeader("X-Riot-Token", api);
             var topPlayedRestResponse = await topPlayedUrl.ExecuteAsync(topPlayedRequest);
@@ -785,8 +785,8 @@ namespace API.Controllers
                     DamageTaken = subItem.totalDamageTaken,
                     TowerDamage = subItem.damageDealtToTurrets,
                     ObjDamage = subItem.damageDealtToObjectives,
-                    SkillshotsHit = subItem.challenges.skillshotsHit,
-                    SkillshotsMissed = subItem.challenges.skillshotsDodged,
+                    SkillshotsHit = subItem.challenges?.skillshotsHit,
+                    SkillshotsMissed = subItem.challenges?.skillshotsDodged,
                     Farm = totalFarm,
                     PlayerItems = playerItems,
                     SummonerSpell1 = SummonerSpells[subItem.summoner1Id],

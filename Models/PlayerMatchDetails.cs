@@ -16,6 +16,7 @@
         public int? SkillshotsHit { get; set; }
         public int? SkillshotsMissed { get; set; }
         public int? Farm { get; set; }
+        public int? VisionScore { get; set; }
         public Items? PlayerItems { get; set; }
         public string? SummonerSpell1 { get; set; }
         public string? SummonerSpell2{ get; set; }

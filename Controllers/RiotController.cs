@@ -289,8 +289,6 @@ namespace API.Controllers
             var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
 
             var allPlayerDetails = new List<PlayerMatchHistory>();
-            string didWin = "";
-            string gameMode = "";
 
             var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
             var matchRequest = new RestRequest("", Method.Get);
@@ -561,9 +559,23 @@ namespace API.Controllers
 
                 //topPlayedList.Add($"{champ.name} ({item.championPoints})");
 
+                string champName;
+                if (champ.id == "Wukong")
+                {
+                    champName = "MonkeyKing";
+                }
+                else if (champ.id == "FiddleSticks")
+                {
+                    champName = "Fiddlesticks";
+                }
+                else
+                {
+                    champName = champ.id;
+                }
+
                 mostPlayed = new MostPlayed
                 {
-                    ChampionName = champ?.name,
+                    ChampionName = champName,
                     ChampionPoints = item.championPoints
                 };
 
@@ -812,6 +824,7 @@ namespace API.Controllers
                     SkillshotsHit = subItem.challenges?.skillshotsHit ?? 0,
                     SkillshotsMissed = subItem.challenges?.skillshotsDodged ?? 0,
                     Farm = totalFarm,
+                    VisionScore = subItem.visionScore,
                     PlayerItems = playerItems,
                     SummonerSpell1 = SummonerSpells[subItem.summoner1Id],
                     SummonerSpell2 = SummonerSpells[subItem.summoner2Id],
@@ -847,7 +860,7 @@ namespace API.Controllers
             return newMatchData;
         }
 
-        [HttpGet("GetSingleMatchDetailsForSpecialGameModes")]
+        [HttpGet("GetSingleMatchDetailsForArena")]
         public async Task<SpecialGamemodeStats> GetSpecialMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch

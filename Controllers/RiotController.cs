@@ -259,6 +259,12 @@ namespace API.Controllers
 
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
+            // So it doesn't return nothing at the beginning 
+            if(response.puuid == null) 
+            {
+                return NotFound("Account not found");
+            }
+
             var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var newRequest = new RestRequest("", Method.Get);
             newRequest.AddHeader("X-Riot-Token", api);
@@ -594,8 +600,8 @@ namespace API.Controllers
             var idToNameMap = championResponse.data.Values.ToDictionary(c => int.Parse(c.key), c => c.name);
 
             var freeChampNames = freeToPlayResponse.freeChampionIds
-                                    .Select(i => idToNameMap.ContainsKey(i) ? idToNameMap[i] : $"Unknown({i})")
-                                    .ToList();
+                                .Select(i => idToNameMap.ContainsKey(i) ? idToNameMap[i] : $"Unknown({i})")
+                                .ToList();
 
             return freeChampNames;
 
@@ -684,11 +690,8 @@ namespace API.Controllers
                 "ru" => "europe"
             };
 
-            var newMatchData = new MatchStatsNew();
             string didWin = "";
-            int totalBlueTeamKills = 0;
-            int totalRedTeamKills =  0;
-                
+            var newMatchData = new MatchStatsNew();
             var playersInMatch = new List<PlayerMatchDetails>();
 
             var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
@@ -699,15 +702,36 @@ namespace API.Controllers
 
             foreach (var winnerItem in matchDataResponse.info.teams)
             {
-                totalBlueTeamKills = winnerItem.objectives.champion.kills;
-                totalRedTeamKills = winnerItem.objectives.champion.kills;
-
                 if (winnerItem.win)
                 {
                     didWin = winnerItem.teamId == 100 ? "Blue Team" : "Red Team";
                     break;
                 }
             }
+
+            var blueTeam = matchDataResponse.info.teams.FirstOrDefault(t => t.teamId == 100);
+            var redTeam = matchDataResponse.info.teams.FirstOrDefault(t => t.teamId == 200);
+
+            int totalBlueTeamKills = blueTeam?.objectives?.champion?.kills ?? 0;
+            int totalRedTeamKills = redTeam?.objectives?.champion?.kills ?? 0;
+
+            int blueDragons = blueTeam?.objectives?.dragon?.kills ?? 0;
+            int redDragons = redTeam?.objectives?.dragon?.kills ?? 0;
+
+            int blueBarons = blueTeam?.objectives?.baron?.kills ?? 0;
+            int redBarons = redTeam?.objectives?.baron?.kills ?? 0;
+
+            int blueTurretKills = blueTeam?.objectives?.tower?.kills ?? 0;
+            int redTurretKills = redTeam?.objectives?.tower?.kills ?? 0;
+
+            int blueInhibKills = blueTeam?.objectives?.inhibitor?.kills ?? 0;
+            int redInhibKills = redTeam?.objectives?.inhibitor?.kills ?? 0;
+
+            int blueHearldKills = blueTeam?.objectives?.riftHerald?.kills ?? 0;
+            int redHearldKills = redTeam?.objectives?.riftHerald?.kills ?? 0;
+
+            int blueAtakhanKills = blueTeam?.objectives?.atakhan?.kills ?? 0;
+            int redAtakhanKills = redTeam?.objectives?.atakhan?.kills ?? 0;
 
             foreach (var subItem in matchDataResponse.info.participants)
             {
@@ -801,10 +825,23 @@ namespace API.Controllers
                 GameID = matchDataResponse.metadata.matchId,
                 GameWinner = didWin,
                 GameMode = queueDictionary[matchDataResponse.info.queueId],
-                totalBlueKills = totalBlueTeamKills,
-                totalRedKills = totalRedTeamKills,
+                TotalBlueKills = totalBlueTeamKills,
+                TotalRedKills = totalRedTeamKills,
+                TotalBlueDragonKills = blueDragons,
+                TotalRedDragonKills = redDragons,
+                TotalBlueBaronKills = blueBarons,
+                TotalRedBaronKills = redBarons,
+                TotalBlueTurrets = blueTurretKills,
+                TotalRedTurrets = redTurretKills,
+                TotalBlueInhib = blueInhibKills, 
+                TotalRedInhib = redInhibKills,
+                BlueHearldKills =  blueHearldKills,
+                RedHearldKills = redHearldKills,
+                BlueAtakhanKills = blueAtakhanKills,
+                RedAtakhanKills = redAtakhanKills,
                 Players = playersInMatch
             };
+
             newMatchData = matchStats;
 
             return newMatchData;
@@ -833,9 +870,8 @@ namespace API.Controllers
                 "ru" => "europe"
             };
 
-            var newMatchData = new SpecialGamemodeStats();
             string gameMode = "";
-
+            var newMatchData = new SpecialGamemodeStats();
             var playersInMatch = new List<SpecialPlayerDetails>();
 
             var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
@@ -844,7 +880,6 @@ namespace API.Controllers
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
             
-
             foreach (var item in matchDataResponse.info.participants.OrderBy(x => x.placement))
             {
                 string KDA = $"{item.kills}/{item.deaths}/{item.assists}";
@@ -913,7 +948,6 @@ namespace API.Controllers
                 GameMode = queueDictionary[matchDataResponse.info.queueId],
                 SpecialGamePlayerStats = playersInMatch
             };
-
 
             newMatchData = matchStats;
 

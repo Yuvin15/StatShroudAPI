@@ -3,6 +3,6 @@
     public class MostPlayed
     {
         public string ChampionName { get; set; }
-        public int ChampionPoints { get; set; }
+        public string ChampionPoints { get; set; }
     }
 }

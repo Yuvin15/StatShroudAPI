@@ -5,6 +5,7 @@ using RestSharp;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
 using static API.Models.MatchData;
@@ -576,7 +577,7 @@ namespace API.Controllers
                 mostPlayed = new MostPlayed
                 {
                     ChampionName = champName,
-                    ChampionPoints = item.championPoints
+                    ChampionPoints = item.championPoints.ToString("N0", CultureInfo.InvariantCulture)
                 };
 
                 topPlayedList.Add(mostPlayed);

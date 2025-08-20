@@ -261,10 +261,7 @@ namespace API.Controllers
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
             // So it doesn't return nothing at the beginning 
-            if(response.puuid == null) 
-            {
-                return NotFound("Account not found");
-            }
+            
 
             var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var newRequest = new RestRequest("", Method.Get);
@@ -281,6 +278,11 @@ namespace API.Controllers
             var accountResponse = await accountUrl.ExecuteAsync(accountRequest);
 
             var accountResponse2 = JsonConvert.DeserializeObject<RiotAccount>(accountResponse.Content);
+
+            if (accountResponse2.puuid == null)
+            {
+                return NotFound("Account not found");
+            }
 
             var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
             var rankedRequest = new RestRequest("", Method.Get);
@@ -397,7 +399,7 @@ namespace API.Controllers
         }
         
         [HttpGet("GetHistory")]
-        public async Task<List<MatchStatsNew>> GetMatchHistory(string gameName, string tagLine, string region)
+        public async Task<ActionResult<List<MatchStatsNew>>> GetMatchHistory(string gameName, string tagLine, string region)
         {
             string mmRegion = region.ToLower() switch
             {
@@ -504,7 +506,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetTopPlayed")]
-        public async Task<List<MostPlayed>> GetTopPlayed(string gameName, string tagLine, string region)
+        public async Task<ActionResult<List<MostPlayed>>> GetTopPlayed(string gameName, string tagLine, string region)
         {
             string mmRegion = region.ToLower() switch
             {
@@ -554,6 +556,11 @@ namespace API.Controllers
             var topPlayedRestResponse = await topPlayedUrl.ExecuteAsync(topPlayedRequest);
             var topPlayedResponse = JsonConvert.DeserializeObject<List<TopPlayed>>(topPlayedRestResponse.Content).Take(3);
 
+            if (topPlayedResponse.Count() == 0)
+            {
+                return NotFound("Account not found");
+            }
+
             foreach (var item in topPlayedResponse)
             {
                 var champ = championResponse?.data.Values.FirstOrDefault(i => i.key == item.championId.ToString());
@@ -588,7 +595,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetFreeCharacters")]
-        public async Task<List<string>> GetFreeCharacters()
+        public async Task<ActionResult<List<string>>> GetFreeCharacters()
         {
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
@@ -621,7 +628,7 @@ namespace API.Controllers
         }
 
         [HttpGet("PoroPop")]
-        public async Task<int> PoroPopped(string gameName, string tagLine, string region)
+        public async Task<ActionResult<int>> PoroPopped(string gameName, string tagLine, string region)
         {
             int totalPoroPopped = 0;
 
@@ -681,7 +688,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetSingleMatchDetailsForNormals")]
-        public async Task<MatchStatsNew> GetMatchDetails(string region, string matchID) 
+        public async Task<ActionResult<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
             {
@@ -862,7 +869,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetSingleMatchDetailsForArena")]
-        public async Task<SpecialGamemodeStats> GetSpecialMatchDetails(string region, string matchID) 
+        public async Task<ActionResult<SpecialGamemodeStats>> GetSpecialMatchDetails(string region, string matchID) 
         {
             string mmRegion = region.ToLower() switch
             {

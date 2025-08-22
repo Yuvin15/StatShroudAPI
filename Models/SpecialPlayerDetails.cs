@@ -7,8 +7,6 @@
         public int PlayerTeam { get; set; }
         public int PlayerTeamPosition { get; set; }
         public string KDA { get; set; }
-        public int GoldSpent { get; set; }
-        public int GoldEarned { get; set; }
         public int Damage { get; set; }
         public int DamageTaken { get; set; }
         public int SkillshotsHit { get; set; }

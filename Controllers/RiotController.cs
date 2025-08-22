@@ -948,8 +948,6 @@ namespace API.Controllers
                     PlayerTeam = item.playerSubteamId,
                     ChampionName = champName,
                     KDA = KDA,
-                    GoldSpent = item.goldSpent,
-                    GoldEarned = item.goldEarned,
                     Damage = item.totalDamageDealtToChampions,
                     DamageTaken = item.totalDamageTaken,
                     SkillshotsHit = item.challenges.skillshotsHit,

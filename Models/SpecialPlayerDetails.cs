@@ -4,7 +4,7 @@
     {
         public string PlayerName { get; set; }
         public string ChampionName { get; set; }
-        public int PlayerTeam { get; set; }
+        public string PlayerTeamName { get; set; }
         public int PlayerTeamPosition { get; set; }
         public string KDA { get; set; }
         public int Damage { get; set; }

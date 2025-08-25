@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using static API.Models.MatchData;
 
 namespace API.Controllers
@@ -255,28 +256,19 @@ namespace API.Controllers
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
             request.AddHeader("X-Riot-Token", api);
-
             var restResponse = await url.ExecuteAsync(request);
-
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
-
-            // So it doesn't return nothing at the beginning 
-            
 
             var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var newRequest = new RestRequest("", Method.Get);
             newRequest.AddHeader("X-Riot-Token", api);
-
             var newRestResponse = await url.ExecuteAsync(newRequest);
-
             var newResponse = JsonConvert.DeserializeObject<NewRiotAccount>(newRestResponse.Content);
 
             var accountUrl = new RestClient($"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{response.puuid}");
             var accountRequest = new RestRequest("", Method.Get);
             accountRequest.AddHeader("X-Riot-Token", api);
-
             var accountResponse = await accountUrl.ExecuteAsync(accountRequest);
-
             var accountResponse2 = JsonConvert.DeserializeObject<RiotAccount>(accountResponse.Content);
 
             if (accountResponse2.puuid == null)
@@ -288,9 +280,7 @@ namespace API.Controllers
             var rankedRequest = new RestRequest("", Method.Get);
             rankedRequest.AddHeader("X-Riot-Token", api); 
             var rankedResponse = await rankedUrl.ExecuteAsync(rankedRequest);
-
             var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
-
             var allPlayerDetails = new List<PlayerMatchHistory>();
 
             var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
@@ -382,17 +372,13 @@ namespace API.Controllers
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
             request.AddHeader("X-Riot-Token", api);
-
             var restResponse = await url.ExecuteAsync(request);
-
             var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
 
             var challengesURL = new RestClient($"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{response.puuid}");
             var challengesRequest = new RestRequest("", Method.Get);
             challengesRequest.AddHeader("X-Riot-Token", api);
-
             var challengesResponse = await challengesURL.ExecuteAsync(challengesRequest);
-
             var challengesResponse2 = JsonConvert.DeserializeObject<RiotChallenges>(challengesResponse.Content);
 
             return challengesResponse2;
@@ -892,6 +878,7 @@ namespace API.Controllers
             };
 
             string gameMode = "";
+            string gameWinner = "";
             var newMatchData = new SpecialGamemodeStats();
             var playersInMatch = new List<SpecialPlayerDetails>();
 
@@ -903,6 +890,24 @@ namespace API.Controllers
             
             foreach (var item in matchDataResponse.info.participants.OrderBy(x => x.placement))
             {
+
+                string playerTeamName = item.playerSubteamId switch
+                {
+                    1 => "Poro",
+                    2 => "Minion",
+                    3 => "Scuttle",
+                    4 => "Krug",
+                    5 => "Raptor",
+                    6 => "Sentinel",
+                    7 => "Wolf",
+                    8 => "Gromp"
+                };
+
+                if (gameWinner == "" || gameWinner == null) 
+                {
+                    gameWinner = playerTeamName;
+                }
+
                 string KDA = $"{item.kills}/{item.deaths}/{item.assists}";
 
                 Items playerItems = new Items
@@ -941,11 +946,12 @@ namespace API.Controllers
                     champName = item.championName;
                 }
 
+
                 var playerDetails = new SpecialPlayerDetails
                 {
                     PlayerName = item.riotIdGameName,
                     PlayerTeamPosition = item.placement,
-                    PlayerTeam = item.playerSubteamId,
+                    PlayerTeamName = playerTeamName,
                     ChampionName = champName,
                     KDA = KDA,
                     Damage = item.totalDamageDealtToChampions,
@@ -965,6 +971,7 @@ namespace API.Controllers
             {
                 GameID = matchDataResponse.metadata.matchId,
                 GameMode = queueDictionary[matchDataResponse.info.queueId],
+                GameWinner = $"Team {gameWinner}",
                 SpecialGamePlayerStats = playersInMatch
             };
 

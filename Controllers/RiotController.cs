@@ -517,7 +517,6 @@ namespace API.Controllers
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
-            patchRequest.AddHeader("X-Riot-Token", api);
             var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
             var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
 
@@ -586,7 +585,6 @@ namespace API.Controllers
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
-            patchRequest.AddHeader("X-Riot-Token", api);
             var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
             var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
 
@@ -978,6 +976,36 @@ namespace API.Controllers
             newMatchData = matchStats;
 
             return newMatchData;
+        }
+
+        [HttpGet("GetChampionData")]
+        public async Task<ActionResult<List<string>>> GetChampionData(string championName) 
+        {
+            List<string> championData = new List<string>();
+
+            var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
+            var patchRequest = new RestRequest("", Method.Get);
+            var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
+            var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
+
+            var Url = new RestClient($"https://ddragon.leagueoflegends.com/cdn/{patchResponse}/data/en_US/champion/{championName}.json");
+            var urlRequest = new RestRequest("", Method.Get);
+            var urlRestResponse = await Url.ExecuteAsync(urlRequest);
+            var urlResponse = JsonConvert.DeserializeObject<dynamic>(urlRestResponse.Content);
+
+            var champ = urlResponse.data[championName];
+
+            string passiveId = champ.passive.image.full;
+            championData.Add(passiveId);
+
+            foreach (var spell in champ.spells)
+            {
+                championData.Add($"{(string)spell.id}.png");
+            }
+
+            return championData;
+
+            //return null;
         }
     }
 }

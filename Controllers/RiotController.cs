@@ -979,10 +979,8 @@ namespace API.Controllers
         }
 
         [HttpGet("GetChampionData")]
-        public async Task<ActionResult<List<string>>> GetChampionData(string championName) 
+        public async Task<ActionResult<ChampionDetails>> GetChampionData(string championName) 
         {
-            List<string> championData = new List<string>();
-
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
             var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
@@ -995,15 +993,32 @@ namespace API.Controllers
 
             var champ = urlResponse.data[championName];
 
-            string passiveId = champ.passive.image.full;
-            championData.Add(passiveId);
-
-            foreach (var spell in champ.spells)
+            return new ChampionDetails 
             {
-                championData.Add($"{(string)spell.id}.png");
-            }
+                championPassive = (string)champ.passive.image.full,
+                Passive_SpellName = (string)champ.passive.name,
+                Passive_Description = (string)champ.passive.description,
 
-            return championData;
+                ChampionQ = (string)champ.spells[0].image.full,
+                Q_SpellName = (string)champ.spells[0].name,
+                Q_Description = (string)champ.spells[0].description,
+
+                ChampionW = (string)champ.spells[1].image.full,
+                W_SpellName = (string)champ.spells[1].name,
+                W_Description = (string)champ.spells[1].description,
+
+                ChampionE = (string)champ.spells[2].image.full,
+                E_SpellName = (string)champ.spells[2].name,
+                E_Description = (string)champ.spells[2].description,
+                
+                ChampionR = (string)champ.spells[3].image.full,
+                R_SpellName = (string)champ.spells[3].name,
+                R_Description = (string)champ.spells[3].description,
+
+                ChampionLore = (string)champ.lore
+            };
+
+            //return championData;
 
             //return null;
         }

@@ -1015,6 +1015,7 @@ namespace API.Controllers
                 R_SpellName = (string)champ.spells[3].name,
                 R_Description = (string)champ.spells[3].description,
 
+                ChampName = $"{champ.name} {champ.title}",
                 ChampionLore = (string)champ.lore
             };
 

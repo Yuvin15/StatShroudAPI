@@ -27,6 +27,7 @@
         public string R_Description { get; set; }
 
         //Other stuff
+        public string ChampName { get; set; }
         public string ChampionLore { get; set; }
 
     }

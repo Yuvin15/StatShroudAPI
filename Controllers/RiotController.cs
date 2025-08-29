@@ -226,7 +226,8 @@ namespace API.Controllers
             { 1900, "Pick URF" },
             { 2000, "Tutorial 1" },
             { 2010, "Tutorial 2" },
-            { 2020, "Tutorial 3" }
+            { 2020, "Tutorial 3" },
+            { 3140, "Practice tool" }
         };
 
         [HttpGet("GetAccount")]
@@ -875,7 +876,6 @@ namespace API.Controllers
                 "ru" => "europe"
             };
 
-            string gameMode = "";
             string gameWinner = "";
             var newMatchData = new SpecialGamemodeStats();
             var playersInMatch = new List<SpecialPlayerDetails>();
@@ -993,6 +993,28 @@ namespace API.Controllers
 
             var champ = urlResponse.data[championName];
 
+            var champSkins = new List<Skins>();
+
+            foreach (var item in champ.skins)
+            {
+                string champNameForCase;
+
+                if ((string)item.name == "default") 
+                {
+                    champNameForCase = "Default";
+                }
+                else 
+                {
+                    champNameForCase = (string)item.name;
+                }
+
+                champSkins.Add(new Skins
+                {
+                    skinName = champNameForCase,
+                    skinNum = (int)item.num
+                });
+            }
+
             return new ChampionDetails 
             {
                 championPassive = (string)champ.passive.image.full,
@@ -1016,7 +1038,11 @@ namespace API.Controllers
                 R_Description = (string)champ.spells[3].description,
 
                 ChampName = $"{champ.name} {champ.title}",
-                ChampionLore = (string)champ.lore
+                ChampionLore = (string)champ.lore,
+
+                ChampSkins = champSkins
+
+
             };
 
             //return championData;

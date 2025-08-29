@@ -29,6 +29,7 @@
         //Other stuff
         public string ChampName { get; set; }
         public string ChampionLore { get; set; }
+        public List<Skins> ChampSkins { get; set; }
 
     }
 }

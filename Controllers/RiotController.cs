@@ -298,6 +298,7 @@ namespace API.Controllers
                 matchDataRequest.AddHeader("X-Riot-Token", api);
                 var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
                 var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
+
                 var participants = matchDataResponse.info.participants.Where(i => string.Equals(i.riotIdGameName, gameName, StringComparison.OrdinalIgnoreCase));
                 var player = participants.FirstOrDefault();
 
@@ -804,6 +805,7 @@ namespace API.Controllers
                 var playerDetails = new PlayerMatchDetails
                 {
                     PlayerName = subItem.riotIdGameName,
+                    PlayerTag = subItem.riotIdTagline,
                     TeamID = teamName,
                     ChampionName = champName,
                     LaneName = subItem.individualPosition,

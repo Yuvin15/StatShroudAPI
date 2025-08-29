@@ -3,6 +3,7 @@
     public class PlayerMatchDetails
     {
         public string? PlayerName { get; set; }
+        public string? PlayerTag { get; set; }
         public string? TeamID { get; set; }
         public string? ChampionName { get; set; }
         public string LaneName { get; set; }

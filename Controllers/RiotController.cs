@@ -983,6 +983,11 @@ namespace API.Controllers
         [HttpGet("GetChampionData")]
         public async Task<ActionResult<ChampionDetails>> GetChampionData(string championName) 
         {
+            if (championName.Equals("FiddleSticks"))
+            {
+                championName = "Fiddlesticks";
+            }
+
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
             var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);

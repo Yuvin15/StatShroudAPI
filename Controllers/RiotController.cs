@@ -227,7 +227,9 @@ namespace API.Controllers
             { 2000, "Tutorial 1" },
             { 2010, "Tutorial 2" },
             { 2020, "Tutorial 3" },
-            { 3140, "Practice tool" }
+            { 3140, "Practice tool" },
+            { 3100, "Custom Game" },
+            { 470, "SwiftPlay"}
         };
 
         [HttpGet("GetAccount")]

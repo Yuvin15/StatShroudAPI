@@ -19,6 +19,8 @@
         public int RedHearldKills { get; set; }
         public int BlueAtakhanKills { get; set; }
         public int RedAtakhanKills { get; set; }
+        public List<string>? BlueTeamBans { get; set; }
+        public List<string>? RedTeamBans { get; set; }
         public List<PlayerMatchDetails> Players{ get; set; }
     }
 }

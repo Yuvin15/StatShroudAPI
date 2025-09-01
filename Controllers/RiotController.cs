@@ -178,7 +178,6 @@ namespace API.Controllers
             { 440, "Ranked Flex" },
             { 450, "ARAM" },
             { 460, "3v3 Blind Pick" },
-            { 470, "3v3 Ranked Flex" },
             { 490, "Normal (Quickplay)" },
             { 600, "Blood Hunt Assassin" },
             { 610, "Dark Star: Singularity" },
@@ -291,6 +290,9 @@ namespace API.Controllers
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
             var matchResponse2 = JsonConvert.DeserializeObject<dynamic>(matchResponse.Content);
+
+            int winStreak = 0;
+            int loseStreak = 0;
 
             foreach (var item in matchResponse2)
             { 
@@ -678,6 +680,17 @@ namespace API.Controllers
         [HttpGet("GetSingleMatchDetailsForNormals")]
         public async Task<ActionResult<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
         {
+            // This is for DD to get the latest patch version and all characters to that patch
+            var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
+            var patchRequest = new RestRequest("", Method.Get);
+            var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
+            var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
+
+            var championUrl = new RestClient($"https://ddragon.leagueoflegends.com/cdn/{patchResponse}/data/en_US/champion.json");
+            var championRequest = new RestRequest("", Method.Get);
+            var championRestResponse = await championUrl.ExecuteAsync(championRequest);
+            var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
+
             string mmRegion = region.ToLower() switch
             {
                 "br1" => "americas",
@@ -707,6 +720,58 @@ namespace API.Controllers
             matchDataRequest.AddHeader("X-Riot-Token", api);
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
+
+            // Nullable for people that dont ban and swiftplay and aram
+            var blueTeamBans = matchDataResponse.info.teams.FirstOrDefault(x => x.teamId == 100)?.bans;
+            var redTeamBans = matchDataResponse.info.teams.FirstOrDefault(x => x.teamId == 200)?.bans;
+
+            List<string> blueBans = new List<string>();
+            List<string> redBans = new List<string>();
+
+            foreach(var item in blueTeamBans) 
+            {
+                var champ = championResponse?.data.Values.FirstOrDefault(i => i.key == item.championId.ToString());
+
+                if (champ != null)
+                {
+                    string champName;
+                    if (champ.id == "Wukong")
+                    {
+                        champName = "MonkeyKing";
+                    }
+                    else if (champ.id == "FiddleSticks")
+                    {
+                        champName = "Fiddlesticks";
+                    }
+                    else
+                    {
+                        champName = champ.id;
+                    }
+                    blueBans.Add(champName);
+                }
+            }
+
+            foreach (var item in redTeamBans)
+            {
+                var champ = championResponse?.data.Values.FirstOrDefault(i => i.key == item.championId.ToString());
+                if (champ != null)
+                {
+                    string champName;
+                    if (champ.id == "Wukong")
+                    {
+                        champName = "MonkeyKing";
+                    }
+                    else if (champ.id == "FiddleSticks")
+                    {
+                        champName = "Fiddlesticks";
+                    }
+                    else
+                    {
+                        champName = champ.id;
+                    }
+                    redBans.Add(champName);
+                }
+            }
 
             foreach (var winnerItem in matchDataResponse.info.teams)
             {
@@ -849,7 +914,9 @@ namespace API.Controllers
                 RedHearldKills = redHearldKills,
                 BlueAtakhanKills = blueAtakhanKills,
                 RedAtakhanKills = redAtakhanKills,
-                Players = playersInMatch
+                Players = playersInMatch,
+                BlueTeamBans = blueBans,
+                RedTeamBans = redBans
             };
 
             newMatchData = matchStats;
@@ -860,6 +927,17 @@ namespace API.Controllers
         [HttpGet("GetSingleMatchDetailsForArena")]
         public async Task<ActionResult<SpecialGamemodeStats>> GetSpecialMatchDetails(string region, string matchID) 
         {
+            // This is for DD to get the latest patch version and all characters to that patch
+            var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
+            var patchRequest = new RestRequest("", Method.Get);
+            var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
+            var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
+
+            var championUrl = new RestClient($"https://ddragon.leagueoflegends.com/cdn/{patchResponse}/data/en_US/champion.json");
+            var championRequest = new RestRequest("", Method.Get);
+            var championRestResponse = await championUrl.ExecuteAsync(championRequest);
+            var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
+
             string mmRegion = region.ToLower() switch
             {
                 "br1" => "americas",
@@ -889,7 +967,36 @@ namespace API.Controllers
             matchDataRequest.AddHeader("X-Riot-Token", api);
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
-            
+
+            List<string> BanList = new List<string>();
+
+            foreach (var team in matchDataResponse.info.teams)
+            {
+                foreach (var ban in team.bans)
+                {
+                    var champ = championResponse?.data.Values.FirstOrDefault(i => i.key == ban.championId.ToString());
+
+                    if (champ != null)
+                    {
+                        string champName;
+                        if (champ.id == "Wukong")
+                        {
+                            champName = "MonkeyKing";
+                        }
+                        else if (champ.id == "FiddleSticks")
+                        {
+                            champName = "Fiddlesticks";
+                        }
+                        else
+                        {
+                            champName = champ.id;
+                        }
+                        BanList.Add(champName);
+                    }
+                }
+            }
+
+
             foreach (var item in matchDataResponse.info.participants.OrderBy(x => x.placement))
             {
 
@@ -948,7 +1055,6 @@ namespace API.Controllers
                     champName = item.championName;
                 }
 
-
                 var playerDetails = new SpecialPlayerDetails
                 {
                     PlayerName = item.riotIdGameName,
@@ -974,6 +1080,7 @@ namespace API.Controllers
                 GameID = matchDataResponse.metadata.matchId,
                 GameMode = queueDictionary[matchDataResponse.info.queueId],
                 GameWinner = $"Team {gameWinner}",
+                BanList = BanList,
                 SpecialGamePlayerStats = playersInMatch
             };
 
@@ -1058,5 +1165,18 @@ namespace API.Controllers
 
             //return null;
         }
+
+        [HttpGet("GetTopPlayersPerRank")]
+        public async Task<ActionResult<string>> GetTopPlayers(string championName) 
+        {
+            return null;
+        }
+
+        [HttpGet("GetMatchTimeLine")]
+        public async Task<ActionResult<string>> GetTimeLine(string region, string matchID)
+        {
+            return null;
+        }
+
     }
 }

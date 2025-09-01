@@ -252,7 +252,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
@@ -410,7 +411,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             var allPlayerDetails = new List<MatchStats>();
@@ -517,7 +519,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             // This is for DD to get the latest patch version and all characters to that patch
@@ -645,7 +648,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?queue=450&start=0&count=50");
@@ -708,7 +712,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             string didWin = "";
@@ -955,7 +960,8 @@ namespace API.Controllers
                 "tr1" => "europe",
                 "tw2" => "sea",
                 "vn2" => "sea",
-                "ru" => "europe"
+                "ru" => "europe",
+                "me" => "europe"
             };
 
             string gameWinner = "";

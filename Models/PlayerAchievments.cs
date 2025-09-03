@@ -5,5 +5,6 @@
         public string? Streak { get; set; }
         public string? FarmPer10 { get; set; }
         public string? PlayerSurvivability { get; set; }
+        public string? OTPStatus { get; set; }
     }
 }

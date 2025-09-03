@@ -305,7 +305,7 @@ namespace API.Controllers
             var allPlayerDetails = new List<PlayerMatchHistory>();
 
             //Match ids
-            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=20");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
@@ -318,10 +318,12 @@ namespace API.Controllers
             string farmStatus = "";
             string gameDuration = "";
             string playerSurvivability = "";
+            string otpOrNot = "";
             List<int> killAssistCount = new List<int>();  
             List<int> deathCount = new List<int>();
             List<int> farmDeficit = new List<int>();
             List<string> lane = new List<string>();
+            List<string> otpCheck = new List<string>();
 
             //Check every match id
             foreach (var item in matchResponse2)
@@ -379,6 +381,8 @@ namespace API.Controllers
                 {
                     champName = player.championName;
                 }
+
+                otpCheck.Add(champName);
 
                 //Check solo queue rank cause thats the rank people check the most
                 var SoloRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5");
@@ -518,11 +522,35 @@ namespace API.Controllers
                 playerSurvivability = "Player has an average Kill and Assist to Death ratio";
             }
 
+            //Checks if the player is an otp or not
+            var champCounts = otpCheck
+                            .GroupBy(x => x)
+                            .Select(g => new { Champ = g.Key, Count = g.Count() })
+                            .OrderByDescending(g => g.Count)
+                            .ToList();
+
+            var topChamp = champCounts.First();
+
+            if (topChamp.Count >= 7)
+            {
+                otpOrNot += $". Player seems to OTP {topChamp.Champ}";
+            }
+            else if (topChamp.Count >= 5)
+            {
+                otpOrNot += $". Player seems to main {topChamp.Champ}";
+            }
+            else
+            {
+                otpOrNot += ". Player plays a wide variety of champions";
+            }
+
+
             PlayerAchievments playerAchievments = new PlayerAchievments
             {
                 FarmPer10 = farmStatus,
                 Streak = whatStreak,
-                PlayerSurvivability = playerSurvivability
+                PlayerSurvivability = playerSurvivability,
+                OTPStatus = otpOrNot
             };
 
             var playerDetails = new RiotAccountDetails
@@ -1356,4 +1384,5 @@ namespace API.Controllers
         }
 
     }
+
 }

@@ -230,7 +230,7 @@ namespace API.Controllers
             { 2020, "Tutorial 3" },
             { 3140, "Practice tool" },
             { 3100, "Custom Game" },
-            { 470, "SwiftPlay"}
+            { 480, "SwiftPlay"}
         };
 
         public Dictionary<string, int> FarmPerRank = new Dictionary<string, int>
@@ -305,7 +305,7 @@ namespace API.Controllers
             var allPlayerDetails = new List<PlayerMatchHistory>();
 
             //Match ids
-            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=20");
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?startTime=1735689600&start=0&count=20");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
@@ -447,15 +447,19 @@ namespace API.Controllers
             //Check for loss streak or win streak
             reverseGameWinnerCheck = gameWinnerCheck.AsEnumerable().Reverse().TakeLast(3).ToList();
 
-            if (reverseGameWinnerCheck[0] == "Victory"
-                && reverseGameWinnerCheck[1] == "Victory"
-                && reverseGameWinnerCheck[2] == "Victory")
+            if (reverseGameWinnerCheck.Count() < 3) 
+            {
+                whatStreak = "Less than 3 games";
+            }
+            else if (reverseGameWinnerCheck?[0] == "Victory"
+                     && reverseGameWinnerCheck?[1] == "Victory"
+                     && reverseGameWinnerCheck?[2] == "Victory")
             {
                 whatStreak = "Winning Streak";
             }
-            else if (reverseGameWinnerCheck[0] == "Defeat"
-                     && reverseGameWinnerCheck[1] == "Defeat"
-                     && reverseGameWinnerCheck[2] == "Defeat")
+            else if (reverseGameWinnerCheck?[0] == "Defeat"
+                     && reverseGameWinnerCheck?[1] == "Defeat"
+                     && reverseGameWinnerCheck?[2] == "Defeat")
             {
                 whatStreak = "Losing Streak";
             }
@@ -533,17 +537,27 @@ namespace API.Controllers
 
             if (topChamp.Count >= 7)
             {
-                otpOrNot += $". Player seems to OTP {topChamp.Champ}";
+                otpOrNot += $"Player OTP is {topChamp.Champ}";
+
+                if(topChamp.Champ == "Teemo") 
+                {
+                    otpOrNot = "This player has no life (Teemo OTP)";
+                }
+
+                if (topChamp.Champ == "Yuumi") 
+                { 
+                    otpOrNot = "This player has watched every show in existence (Yuumi OTP)";
+                }
+
             }
             else if (topChamp.Count >= 5)
             {
-                otpOrNot += $". Player seems to main {topChamp.Champ}";
+                otpOrNot += $"Player mains {topChamp.Champ}";
             }
             else
             {
-                otpOrNot += ". Player plays a wide variety of champions";
+                otpOrNot += "Player plays a wide variety of champions";
             }
-
 
             PlayerAchievments playerAchievments = new PlayerAchievments
             {

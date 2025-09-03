@@ -1,11 +1,13 @@
 ﻿using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -99,12 +101,12 @@ namespace API.Controllers
             { 8316, "perk-images/Styles/Inspiration/JackOfAllTrades/JackofAllTrades2.png" },
 
             { 5008, "perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
-            { 5005, "perk-images/StatMods/StatModsAttackSpeedIcon.png" },  
-            { 5007, "perk-images/StatMods/StatModsCDRScalingIcon.png" },   
+            { 5005, "perk-images/StatMods/StatModsAttackSpeedIcon.png" },
+            { 5007, "perk-images/StatMods/StatModsCDRScalingIcon.png" },
             { 5010, "perk-images/StatMods/StatModsMovementSpeedIcon.png" },
             { 5001, "perk-images/StatMods/StatModsHealthScalingIcon.png" },
-            { 5011, "perk-images/StatMods/StatModsHealthIcon.png" },       
-            { 5013, "perk-images/StatMods/StatModsTenacityIcon.png" }      
+            { 5011, "perk-images/StatMods/StatModsHealthIcon.png" },
+            { 5013, "perk-images/StatMods/StatModsTenacityIcon.png" }
         };
         // AI made my life easy here
         public Dictionary<int, string> SummonerSpells = new()
@@ -231,6 +233,20 @@ namespace API.Controllers
             { 470, "SwiftPlay"}
         };
 
+        public Dictionary<string, int> FarmPerRank = new Dictionary<string, int>
+        {
+            { "Unranked",  5 },
+            { "Iron",  5 },
+            { "Bronze" , 5 },
+            { "Silver" , 6},
+            { "Gold" , 7},
+            { "Platinum" , 8},
+            { "Diamond" , 9},
+            { "Master" , 10},
+            { "Grandmaster" , 10},
+            { "Challenger" , 10}
+        };
+
         [HttpGet("GetAccount")]
         public async Task<ActionResult<RiotAccountDetails>> NewGetAccount(string gameName, string tagLine, string region)
         {
@@ -256,6 +272,7 @@ namespace API.Controllers
                 "me" => "europe"
             };
 
+            // Fetch data needed for account details
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
             request.AddHeader("X-Riot-Token", api);
@@ -279,6 +296,7 @@ namespace API.Controllers
                 return NotFound("Account not found");
             }
 
+            // Get ranked data
             var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
             var rankedRequest = new RestRequest("", Method.Get);
             rankedRequest.AddHeader("X-Riot-Token", api); 
@@ -286,17 +304,28 @@ namespace API.Controllers
             var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
             var allPlayerDetails = new List<PlayerMatchHistory>();
 
+            //Match ids
             var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=10");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
             var matchResponse2 = JsonConvert.DeserializeObject<dynamic>(matchResponse.Content);
 
-            int winStreak = 0;
-            int loseStreak = 0;
+            List<string> gameWinnerCheck = new List<string>();
+            List<string> reverseGameWinnerCheck = new List<string>();
 
+            string whatStreak = "";
+            string farmStatus = "";
+            string gameDuration = "";
+            string playerSurvivability = "";
+            List<int> killAssistCount = new List<int>();  
+            List<int> deathCount = new List<int>();
+            List<int> farmDeficit = new List<int>();
+            List<string> lane = new List<string>();
+
+            //Check every match id
             foreach (var item in matchResponse2)
-            { 
+            {
                 var playersInMatch = new List<PlayerMatchDetails>();
                 var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{item}");
                 var matchDataRequest = new RestRequest("", Method.Get);
@@ -307,8 +336,16 @@ namespace API.Controllers
                 var participants = matchDataResponse.info.participants.Where(i => string.Equals(i.riotIdGameName, gameName, StringComparison.OrdinalIgnoreCase));
                 var player = participants.FirstOrDefault();
 
+                gameDuration = TimeSpan.FromSeconds(matchDataResponse.info.gameDuration).ToString(@"mm\:ss");
+                int gameDurationSeconds = matchDataResponse.info.gameDuration;
+                double gameMinutes = gameDurationSeconds / 60.0;
+
                 int totalFarm = (int)(player.totalMinionsKilled + player.neutralMinionsKilled);
 
+                killAssistCount.Add(player.kills + int.Parse(player.assists));
+                deathCount.Add(player.deaths);
+
+                //Get the game winner for that match
                 string gameWinner = "";
                 foreach (var team in matchDataResponse.info.teams)
                 {
@@ -317,22 +354,24 @@ namespace API.Controllers
                         if (team.teamId == player.teamId)
                         {
                             gameWinner = "Victory";
+                            gameWinnerCheck.Add(gameWinner);
                         }
                         else
                         {
                             gameWinner = "Defeat";
+                            gameWinnerCheck.Add(gameWinner);
                         }
                         break;
                     }
                 }
 
+                //I have to do this check cause game files are different to champion names
                 string champName;
-
-                if (player.championName == "Wukong") 
-                { 
+                if (player.championName == "Wukong")
+                {
                     champName = "MonkeyKing";
                 }
-                else if(player.championName == "FiddleSticks")
+                else if (player.championName == "FiddleSticks")
                 {
                     champName = "Fiddlesticks";
                 }
@@ -341,11 +380,55 @@ namespace API.Controllers
                     champName = player.championName;
                 }
 
+                //Check solo queue rank cause thats the rank people check the most
+                var SoloRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5");
+                string rank = SoloRank?.tier?.ToLower() switch
+                {
+                    "unranked" => "Unranked",
+                    "iron" => "Iron",
+                    "bronze" => "Bronze",
+                    "silver" => "Silver",
+                    "gold" => "Gold",
+                    "platinum" => "Platinum",
+                    "diamond" => "Diamond",
+                    "master" => "Master",
+                    "grandmaster" => "Grandmaster",
+                    "challenger" => "Challenger",
+                    _ => "Unranked"
+                };
+
+                //Claude helped me fix the farming logic here
+                // Only check farming for non-support roles
+                if (player.individualPosition != "UTILITY")
+                {
+                    //Do this to check the cs/min against their rank
+                    int targetCSPerMin = FarmPerRank[rank];
+                    double expectedFarm = targetCSPerMin * gameMinutes;
+                    double actualCSPerMin = totalFarm / gameMinutes;
+
+                    // Fixed logic: if actual CS per min is LESS than target, add to deficit
+                    if (actualCSPerMin < targetCSPerMin)
+                    {
+                        double deficit = expectedFarm - totalFarm;
+                        farmDeficit.Add(Math.Abs((int)Math.Round(deficit)));
+                        lane.Add(player.individualPosition);
+                    }
+                    else
+                    {
+                        // Player farmed well, add 0 deficit or handle separately
+                        farmDeficit.Add(0);
+                        lane.Add(player.individualPosition);
+                    }
+                }
+                // For support players, don't add to farm tracking lists at all
+                // This prevents them from affecting farm statistics
+
                 var uniqueDetails = new PlayerMatchHistory
                 {
                     MatchID = matchDataResponse.metadata.matchId,
                     GameWinner = gameWinner,
                     GameMode = queueDictionary[matchDataResponse.info.queueId],
+                    MatchDuration = gameDuration,
                     ChampionName = champName ?? "Unknown",
                     Lane = player.individualPosition ?? "Unknown",
                     KDA = $"{player.kills}/{player.deaths}/{player.assists}",
@@ -354,6 +437,93 @@ namespace API.Controllers
 
                 allPlayerDetails.Add(uniqueDetails);
             }
+
+            int goodFarmCheck = 0;
+
+            //Check for loss streak or win streak
+            reverseGameWinnerCheck = gameWinnerCheck.AsEnumerable().Reverse().TakeLast(3).ToList();
+
+            if (reverseGameWinnerCheck[0] == "Victory"
+                && reverseGameWinnerCheck[1] == "Victory"
+                && reverseGameWinnerCheck[2] == "Victory")
+            {
+                whatStreak = "Winning Streak";
+            }
+            else if (reverseGameWinnerCheck[0] == "Defeat"
+                     && reverseGameWinnerCheck[1] == "Defeat"
+                     && reverseGameWinnerCheck[2] == "Defeat")
+            {
+                whatStreak = "Losing Streak";
+            }
+            else
+            {
+                whatStreak = "No streak";
+            }
+
+            //Check if they farmed well based on their rank (supports are already excluded)
+            for (int i = 0; i < farmDeficit.Count; i++)
+            {
+                // Since we only added non-support games to farmDeficit, no need to check lane again
+                if (farmDeficit[i] <= 50) // Changed logic: good farming means LOW deficit
+                {
+                    goodFarmCheck++;
+                }
+            }
+
+            //Determine farm status based on non-support games only
+            int totalNonSupportGames = farmDeficit.Count;
+            if (totalNonSupportGames == 0)
+            {
+                farmStatus = "Player only played support roles - farming not applicable";
+            }
+            else if (goodFarmCheck >= (totalNonSupportGames * 0.6)) // 60% threshold
+            {
+                farmStatus = "Player farmed above their ranked expectation in majority of their non-support games";
+            }
+            else if (goodFarmCheck >= (totalNonSupportGames * 0.3)) // 30% threshold
+            {
+                farmStatus = "Player farmed as intended for their rank";
+            }
+            else
+            {
+                farmStatus = "Player needs to work on their farming skills";
+            }
+
+            // Check for player's survivability based on KDA
+            int goodKDA = 0;
+            int badKDA = 0;
+
+            for (int i = 0; i < killAssistCount.Count(); i++)
+            {
+                if (killAssistCount[i] > deathCount[i])
+                {
+                    goodKDA++;
+                }
+                else
+                {
+                    badKDA++;
+                }
+            }
+
+            if (goodKDA > badKDA)
+            {
+                playerSurvivability = "Player has a good Kill and Assist to Death ratio";
+            }
+            else if (goodKDA < badKDA)
+            {
+                playerSurvivability = "Player has a bad Kill and Assist to Death ratio";
+            }
+            else
+            {
+                playerSurvivability = "Player has an average Kill and Assist to Death ratio";
+            }
+
+            PlayerAchievments playerAchievments = new PlayerAchievments
+            {
+                FarmPer10 = farmStatus,
+                Streak = whatStreak,
+                PlayerSurvivability = playerSurvivability
+            };
 
             var playerDetails = new RiotAccountDetails
             {
@@ -366,7 +536,8 @@ namespace API.Controllers
                 FlexRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_FLEX_SR") is var flex && flex != null
                                                         ? $"{flex.tier} {flex.rank} ({flex.leaguePoints} LP)"
                                                         : "Unranked",
-                BasicMatchDetails  = allPlayerDetails
+                Achievments = playerAchievments,
+                BasicMatchDetails = allPlayerDetails
             };
 
             return playerDetails;

@@ -1397,6 +1397,38 @@ namespace API.Controllers
             return null;
         }
 
+        [HttpGet("GetItems")]
+        public async Task<ActionResult<List<ItemDescriptions>>> GetItems() 
+        {
+            var itemUrl = new RestClient("https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/items.json");
+            var itemRequest = new RestRequest("", Method.Get);
+            var itemRestResponse = await itemUrl.ExecuteAsync(itemRequest);
+            var itemResponse = JsonConvert.DeserializeObject<List<AllItems>>(itemRestResponse.Content);
+
+            var listOfItems = new List<ItemDescriptions>();
+
+            foreach (var item in itemResponse)
+            {
+                var items = new ItemDescriptions
+                {
+                    ItemID = item.id,
+                    ItemName = item.name,
+                    ItemDetail = item.description,
+                    IsActive = item.active,
+                    Price = item.price,
+                    PriceTotal = item.priceTotal,
+                    ItemImagePath = item.iconPath,
+                    CanPurchase = item.inStore,
+                    BuildFrom = new List<int>(item.from),
+                    BuildTo = new List<int>(item.to),
+                    ItemCategories = new List<string>(item.categories)
+                };
+
+                listOfItems.Add(items);
+            }
+
+            return listOfItems;
+        }
     }
 
 }

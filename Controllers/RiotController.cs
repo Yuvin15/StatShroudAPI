@@ -1400,31 +1400,41 @@ namespace API.Controllers
         [HttpGet("GetItems")]
         public async Task<ActionResult<List<ItemDescriptions>>> GetItems() 
         {
-            var itemUrl = new RestClient("https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/items.json");
+            var itemUrl = new RestClient("https://ddragon.leagueoflegends.com/cdn/15.17.1/data/en_US/item.json");
             var itemRequest = new RestRequest("", Method.Get);
             var itemRestResponse = await itemUrl.ExecuteAsync(itemRequest);
-            var itemResponse = JsonConvert.DeserializeObject<List<AllItems>>(itemRestResponse.Content);
+            var itemResponse = JsonConvert.DeserializeObject<AllItems>(itemRestResponse.Content);
 
             var listOfItems = new List<ItemDescriptions>();
 
-            foreach (var item in itemResponse)
+            foreach (var kvp in itemResponse.Data)
             {
-                var items = new ItemDescriptions
-                {
-                    ItemID = item.id,
-                    ItemName = item.name,
-                    ItemDetail = item.description,
-                    IsActive = item.active,
-                    Price = item.price,
-                    PriceTotal = item.priceTotal,
-                    ItemImagePath = item.iconPath,
-                    CanPurchase = item.inStore,
-                    BuildFrom = new List<int>(item.from),
-                    BuildTo = new List<int>(item.to),
-                    ItemCategories = new List<string>(item.categories)
-                };
+                var itemId = kvp.Key;
+                var item = kvp.Value;
 
-                listOfItems.Add(items);
+                if (item != null &&
+                    item.Maps != null &&
+                    item.Maps.TryGetValue("11", out bool isSR) && isSR &&
+                    !string.IsNullOrEmpty(item.Description) &&
+                    string.IsNullOrEmpty(item.RequiredChampion) &&
+                    itemId.Count() == 4)
+                {
+                    var items = new ItemDescriptions
+                    {
+                        ItemID = int.Parse(itemId),
+                        ItemName = item.Name,
+                        ItemDetail = item.Description,
+                        IsActive = item.InStore ?? true,
+                        Price = (int)(item.Gold?.Base),
+                        PriceTotal = (int)(item.Gold?.Total),
+                        CanPurchase = item.Gold?.Purchasable ?? false,
+                        BuildFrom = item.From?.ConvertAll(int.Parse),
+                        BuildTo = item.Into?.ConvertAll(int.Parse),
+                        ItemCategories = item.Tags ?? new List<string>()
+                    };
+                    listOfItems.Add(items);
+                }
+                
             }
 
             return listOfItems;

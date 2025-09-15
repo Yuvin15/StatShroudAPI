@@ -1156,6 +1156,11 @@ namespace API.Controllers
             var championRestResponse = await championUrl.ExecuteAsync(championRequest);
             var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
 
+            var augmentUrl = new RestClient($"https://raw.communitydragon.org/latest/cdragon/arena/en_us.json");
+            var augmentRequest = new RestRequest("", Method.Get);
+            var augmentRestResponse = await augmentUrl.ExecuteAsync(augmentRequest);
+            var augmentResponse = JsonConvert.DeserializeObject<AugmentDetails>(augmentRestResponse.Content);
+
             string mmRegion = region.ToLower() switch
             {
                 "br1" => "americas",
@@ -1249,14 +1254,44 @@ namespace API.Controllers
                     Ward = item.item6  != 0 ? item.item6 : null
                 };
 
+                var augment1 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment1);
+                string? augmentName = augment1 != null ? augment1.name : "Null";
+
+                var augment2 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment2);
+                string? augmentName2 = augment2 != null ? augment2.name : "Null";
+
+                var augment3 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment3);
+                string? augmentName3 = augment3 != null ? augment3.name : "Null";
+
+                var augment4 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment4);
+                string? augmentName4 = augment4 != null ? augment4.name : "Null";
+
+                var augment5 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment5);
+                string? augmentName5 = augment5 != null ? augment5.name : "Null";
+
+                var augment6 = augmentResponse?.augments?.FirstOrDefault(x => x.id == item.playerAugment6);
+                string? augmentName6 = augment6 != null ? augment6.name : "Null";
+
                 Augments playerAugments = new Augments
                 {
-                    Augments1 = item.playerAugment1,
-                    Augments2 = item.playerAugment2,
-                    Augments3 = item.playerAugment3,
-                    Augments4 = item.playerAugment4,
-                    Augments5 = item.playerAugment5,
-                    Augments6 = item.playerAugment6
+                    Augments1 = augment1?.iconLarge,
+                    Augments1Name = augment1?.name,
+                    Augments1Description = augment1?.desc,
+                    Augments2 = augment2?.iconLarge,
+                    Augments2Name = augment2?.name,
+                    Augments2Description = augment2?.desc,
+                    Augments3 = augment3?.iconLarge,
+                    Augments3Name = augment3?.name,
+                    Augments3Description = augment3?.desc,
+                    Augments4 = augment4?.iconLarge,
+                    Augments4Name = augment4?.name,
+                    Augments4Description = augment4?.desc,
+                    Augments5 = augment5?.iconLarge,
+                    Augments5Name = augment5?.name,
+                    Augments5Description = augment5?.desc,
+                    Augments6 = augment6?.iconLarge,
+                    Augments6Name = augment6?.name,
+                    Augments6Description = augment6?.desc
                 };
 
                 string champName;
@@ -1400,41 +1435,31 @@ namespace API.Controllers
         [HttpGet("GetItems")]
         public async Task<ActionResult<List<ItemDescriptions>>> GetItems() 
         {
-            var itemUrl = new RestClient("https://ddragon.leagueoflegends.com/cdn/15.17.1/data/en_US/item.json");
+            var itemUrl = new RestClient("https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/items.json");
             var itemRequest = new RestRequest("", Method.Get);
             var itemRestResponse = await itemUrl.ExecuteAsync(itemRequest);
-            var itemResponse = JsonConvert.DeserializeObject<AllItems>(itemRestResponse.Content);
+            var itemResponse = JsonConvert.DeserializeObject<List<AllItems>>(itemRestResponse.Content);
 
             var listOfItems = new List<ItemDescriptions>();
 
-            foreach (var kvp in itemResponse.Data)
+            foreach (var item in itemResponse)
             {
-                var itemId = kvp.Key;
-                var item = kvp.Value;
-
-                if (item != null &&
-                    item.Maps != null &&
-                    item.Maps.TryGetValue("11", out bool isSR) && isSR &&
-                    !string.IsNullOrEmpty(item.Description) &&
-                    string.IsNullOrEmpty(item.RequiredChampion) &&
-                    itemId.Count() == 4)
+                if(item.inStore == true) 
                 {
                     var items = new ItemDescriptions
                     {
-                        ItemID = int.Parse(itemId),
-                        ItemName = item.Name,
-                        ItemDetail = item.Description,
-                        IsActive = item.InStore ?? true,
-                        Price = (int)(item.Gold?.Base),
-                        PriceTotal = (int)(item.Gold?.Total),
-                        CanPurchase = item.Gold?.Purchasable ?? false,
-                        BuildFrom = item.From?.ConvertAll(int.Parse),
-                        BuildTo = item.Into?.ConvertAll(int.Parse),
-                        ItemCategories = item.Tags ?? new List<string>()
+                        ItemID = item.id,
+                        ItemName = item.name,
+                        ItemDetail = item.description,
+                        IsActive = item.active,
+                        Price = item.price,
+                        PriceTotal = item.priceTotal,   
+                        BuildFrom = item.from,
+                        BuildTo = item.to,
+                        ItemCategories = item.categories
                     };
                     listOfItems.Add(items);
                 }
-                
             }
 
             return listOfItems;

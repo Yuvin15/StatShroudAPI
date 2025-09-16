@@ -1444,7 +1444,11 @@ namespace API.Controllers
 
             foreach (var item in itemResponse)
             {
-                if(item.inStore == true) 
+                if(item.inStore == true && 
+                    !item.iconPath.Contains("Strawberry") &&
+                    item.requiredChampion == "" &&
+                    item.id.ToString().Length == 4 &&
+                    item.displayInItemSets == true)
                 {
                     var items = new ItemDescriptions
                     {
@@ -1462,7 +1466,9 @@ namespace API.Controllers
                 }
             }
 
-            return listOfItems;
+            return listOfItems.OrderBy(x => x.PriceTotal)
+                              .ThenBy(x => x.ItemCategories.Contains("Boots"))
+                              .ToList();
         }
     }
 

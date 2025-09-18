@@ -335,7 +335,7 @@ namespace API.Controllers
                 var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
                 var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
 
-                var participants = matchDataResponse.info.participants.Where(i => string.Equals(i.riotIdGameName, gameName, StringComparison.OrdinalIgnoreCase));
+                var participants = matchDataResponse.info.participants.Where(i => string.Equals(i.puuid, response.puuid, StringComparison.OrdinalIgnoreCase));
                 var player = participants.FirstOrDefault();
 
                 gameDuration = TimeSpan.FromSeconds(matchDataResponse.info.gameDuration).ToString(@"mm\:ss");

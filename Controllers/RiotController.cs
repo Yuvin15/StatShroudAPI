@@ -1426,6 +1426,12 @@ namespace API.Controllers
             return null;
         }
 
+        /// <summary>
+        /// Need to work on this one to get the macth timeline data
+        /// </summary>
+        /// <param name="region"></param>
+        /// <param name="matchID"></param>
+        /// <returns></returns>
         [HttpGet("GetMatchTimeLine")]
         public async Task<ActionResult<string>> GetTimeLine(string region, string matchID)
         {
@@ -1444,12 +1450,33 @@ namespace API.Controllers
 
             foreach (var item in itemResponse)
             {
-                if(item.inStore == true && 
+
+                if (item.inStore == true && 
                     !item.iconPath.Contains("Strawberry") &&
                     item.requiredChampion == "" &&
                     item.id.ToString().Length == 4 &&
                     item.displayInItemSets == true)
                 {
+
+                    var itemFrom = new List<int>();
+                    var itemTo = new List<int>();
+
+                    foreach (var subItem in item.from)
+                    {
+                        if (subItem.ToString().Length == 4)
+                        {
+                            itemFrom.Add(subItem);
+                        }
+                    }
+
+                    foreach (var subItem in item.to)
+                    {
+                        if (subItem.ToString().Length == 4)
+                        {
+                            itemTo.Add(subItem);
+                        }
+                    }
+
                     var items = new ItemDescriptions
                     {
                         ItemID = item.id,
@@ -1458,8 +1485,8 @@ namespace API.Controllers
                         IsActive = item.active,
                         Price = item.price,
                         PriceTotal = item.priceTotal,   
-                        BuildFrom = item.from,
-                        BuildTo = item.to,
+                        BuildFrom = itemFrom,
+                        BuildTo = itemTo,
                         ItemCategories = item.categories
                     };
                     listOfItems.Add(items);
@@ -1470,6 +1497,52 @@ namespace API.Controllers
                               .ThenBy(x => x.ItemCategories.Contains("Boots"))
                               .ToList();
         }
+
+        [HttpGet("CheckServerStatus")]
+        public async Task<ActionResult<List<LOLServerStatus>>> CheckServerStatus()
+        {
+
+            List<LOLServerStatus> serverStatusList = new List<LOLServerStatus>();
+
+            List<string> allServers = new List<string>() 
+            {
+                "BR1",
+                "EUN1",
+                "EUW1",
+                "JP1",
+                "KR",
+                "LA1",
+                "LA2",
+                "ME1",
+                "NA1",
+                "OC1",
+                "PBE1",
+                "RU",
+                "SG2",
+                "TR1",
+                "VN2",
+            };
+
+            foreach(var item in allServers) 
+            {
+                var serverUrl = new RestClient($"https://{item}.api.riotgames.com/lol/status/v4/platform-data");
+                var serverRequest = new RestRequest("", Method.Get);
+                serverRequest.AddHeader("X-Riot-Token", api);
+                var serverRestResponse = await serverUrl.ExecuteAsync(serverRequest);
+                var serverResponse = JsonConvert.DeserializeObject<LOLServerStatusDTO>(serverRestResponse.Content);
+
+                LOLServerStatus serverStatus = new LOLServerStatus
+                {
+                    RegionName = item,
+                    ServerStatus = serverResponse
+                };
+
+                serverStatusList.Add(serverStatus);
+            }
+
+            return serverStatusList;
+        }
+
     }
 
 }

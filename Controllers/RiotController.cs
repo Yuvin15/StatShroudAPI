@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Text.Json;
@@ -546,7 +547,7 @@ namespace API.Controllers
 
                 if (topChamp.Champ == "Yuumi") 
                 { 
-                    otpOrNot = "This player has watched every show in existence (Yuumi OTP)";
+                    otpOrNot = @"This player is a ""gamer"" (Yuumi OTP)";
                 }
 
             }
@@ -582,7 +583,7 @@ namespace API.Controllers
                 BasicMatchDetails = allPlayerDetails
             };
 
-            return playerDetails;
+            return Ok(playerDetails);
 
         }
 
@@ -601,7 +602,7 @@ namespace API.Controllers
             var challengesResponse = await challengesURL.ExecuteAsync(challengesRequest);
             var challengesResponse2 = JsonConvert.DeserializeObject<RiotChallenges>(challengesResponse.Content);
 
-            return challengesResponse2;
+            return Ok(challengesResponse2);
         }
         
         [HttpGet("GetHistory")]
@@ -709,7 +710,7 @@ namespace API.Controllers
                 newMatchData.Add(matchStats);
             }
 
-            return newMatchData;
+            return Ok(newMatchData);
         }
 
         [HttpGet("GetTopPlayed")]
@@ -798,7 +799,7 @@ namespace API.Controllers
             }
 
 
-            return topPlayedList;
+            return Ok(topPlayedList);
         }
 
         [HttpGet("GetFreeCharacters")]
@@ -829,7 +830,7 @@ namespace API.Controllers
                                 .Select(i => idToNameMap.ContainsKey(i) ? idToNameMap[i] : $"Unknown({i})")
                                 .ToList();
 
-            return freeChampNames;
+            return Ok(freeChampNames);
 
         }
 
@@ -891,7 +892,7 @@ namespace API.Controllers
 
             }
 
-            return totalPoroPopped;
+            return Ok(totalPoroPopped);
         }
 
         [HttpGet("GetSingleMatchDetailsForNormals")]
@@ -1139,7 +1140,7 @@ namespace API.Controllers
 
             newMatchData = matchStats;
 
-            return newMatchData;
+            return Ok(newMatchData);
         }
 
         [HttpGet("GetSingleMatchDetailsForArena")]
@@ -1340,7 +1341,7 @@ namespace API.Controllers
 
             newMatchData = matchStats;
 
-            return newMatchData;
+            return Ok(newMatchData);
         }
 
         [HttpGet("GetChampionData")]
@@ -1501,46 +1502,49 @@ namespace API.Controllers
         [HttpGet("CheckServerStatus")]
         public async Task<ActionResult<List<LOLServerStatus>>> CheckServerStatus()
         {
-
-            List<LOLServerStatus> serverStatusList = new List<LOLServerStatus>();
-
             List<string> allServers = new List<string>() 
             {
-                "BR1",
-                "EUN1",
-                "EUW1",
-                "JP1",
-                "KR",
-                "LA1",
-                "LA2",
-                "ME1",
-                "NA1",
-                "OC1",
-                "PBE1",
-                "RU",
-                "SG2",
-                "TR1",
-                "VN2",
+                "BR1", "EUN1", "EUW1", "JP1", "KR", "LA1", "LA2",
+                "ME1", "NA1", "OC1", "PBE1", "RU", "SG2", "TR1",
+                "VN2"
             };
 
-            foreach(var item in allServers) 
+            var tasks = allServers.Select(async server =>
             {
-                var serverUrl = new RestClient($"https://{item}.api.riotgames.com/lol/status/v4/platform-data");
+                var serverUrl = new RestClient($"https://{server}.api.riotgames.com/lol/status/v4/platform-data");
                 var serverRequest = new RestRequest("", Method.Get);
                 serverRequest.AddHeader("X-Riot-Token", api);
                 var serverRestResponse = await serverUrl.ExecuteAsync(serverRequest);
                 var serverResponse = JsonConvert.DeserializeObject<LOLServerStatusDTO>(serverRestResponse.Content);
 
-                LOLServerStatus serverStatus = new LOLServerStatus
+                return new LOLServerStatus
                 {
-                    RegionName = item,
+                    RegionName = server,
                     ServerStatus = serverResponse
                 };
 
-                serverStatusList.Add(serverStatus);
-            }
+            });
 
-            return serverStatusList;
+            var serverStatusList = (await Task.WhenAll(tasks)).ToList();
+
+            return Ok(serverStatusList);
+            //foreach (var item in allServers) 
+            //{
+            //    var serverUrl = new RestClient($"https://{item}.api.riotgames.com/lol/status/v4/platform-data");
+            //    var serverRequest = new RestRequest("", Method.Get);
+            //    serverRequest.AddHeader("X-Riot-Token", api);
+            //    var serverRestResponse = await serverUrl.ExecuteAsync(serverRequest);
+            //    var serverResponse = JsonConvert.DeserializeObject<LOLServerStatusDTO>(serverRestResponse.Content);
+
+            //    LOLServerStatus serverStatus = new LOLServerStatus
+            //    {
+            //        RegionName = item,
+            //        ServerStatus = serverResponse
+            //    };
+
+            //    serverStatusList.Add(serverStatus);
+            //}
+
         }
 
     }

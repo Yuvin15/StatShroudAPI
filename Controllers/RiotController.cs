@@ -940,6 +940,7 @@ namespace API.Controllers
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
 
+
             // Nullable for people that dont ban and swiftplay and aram
             var blueTeamBans = matchDataResponse.info.teams.FirstOrDefault(x => x.teamId == 100)?.bans;
             var redTeamBans = matchDataResponse.info.teams.FirstOrDefault(x => x.teamId == 200)?.bans;
@@ -1119,6 +1120,7 @@ namespace API.Controllers
                 GameID = matchDataResponse.metadata.matchId,
                 GameWinner = didWin,
                 GameMode = queueDictionary[matchDataResponse.info.queueId],
+                GameTime = TimeSpan.FromSeconds(matchDataResponse.info.gameDuration).ToString(@"mm\:ss"),
                 TotalBlueKills = totalBlueTeamKills,
                 TotalRedKills = totalRedTeamKills,
                 TotalBlueDragonKills = blueDragons,

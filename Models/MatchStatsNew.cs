@@ -5,6 +5,7 @@
         public string GameID { get; set; }
         public string GameWinner { get; set; }
         public string GameMode { get; set; }
+        public string GameTime { get; set; }
         public int TotalBlueKills { get; set; }
         public int TotalRedKills { get; set; }
         public int TotalBlueDragonKills { get; set; }

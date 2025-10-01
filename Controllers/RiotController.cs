@@ -1520,7 +1520,72 @@ namespace API.Controllers
                 return new LOLServerStatus
                 {
                     RegionName = server,
-                    ServerStatus = serverResponse
+                    ServerStatus = new LOLServerStatusDTO
+                    {
+                        id = serverResponse.id,
+                        name = serverResponse.name,
+                        //Shows only the english versions and not the other languages, maybe later if people use my site I will show all?
+                        locales = serverResponse.locales.Where(x => x == "en_US").ToList(),
+                        maintenances = serverResponse.maintenances?
+                                        .Select(m => new Maintenance
+                                        {
+                                            id = m.id,
+                                            created_at = m.created_at,
+                                            updated_at = m.updated_at,
+                                            archive_at = m.archive_at,
+                                            maintenance_status = m.maintenance_status,
+                                            incident_severity = m.incident_severity,
+                                            platforms = m.platforms,
+                                            titles = m.titles
+                                                    .Where(t => t.locale == "en_US")
+                                                    .ToList(),
+                                            updates = m.updates?
+                                                .Select(u => new Update
+                                                {
+                                                    id = u.id,
+                                                    created_at = u.created_at,
+                                                    updated_at = u.updated_at,
+                                                    publish = u.publish,
+                                                    author = u.author,
+                                                    publish_locations = u.publish_locations,
+                                                    translations = u.translations
+                                                                    .Where(tr => tr.locale == "en_US")
+                                                                    .ToList()
+                                                })
+                                                .ToList()
+                                        })
+                                        .ToList(),
+
+                        incidents = serverResponse.incidents?
+                                        .Select(i => new Incident
+                                        {
+                                            id = i.id,
+                                            created_at = i.created_at,
+                                            updated_at = i.updated_at,
+                                            archive_at = i.archive_at,
+                                            platforms = i.platforms,
+                                            maintenance_status = i.maintenance_status,
+                                            incident_severity = i.incident_severity,
+                                            titles = i.titles
+                                                    .Where(t => t.locale == "en_US")
+                                                    .ToList(),
+                                            updates = i.updates?
+                                                .Select(u => new Update
+                                                {
+                                                    id = u.id,
+                                                    created_at = u.created_at,
+                                                    updated_at = u.updated_at,
+                                                    publish = u.publish,
+                                                    author = u.author,
+                                                    publish_locations = u.publish_locations,
+                                                    translations = u.translations
+                                                                .Where(tr => tr.locale == "en_US")
+                                                                .ToList()
+                                                })
+                                                .ToList()
+                                        })
+                                        .ToList()
+                    }
                 };
 
             });

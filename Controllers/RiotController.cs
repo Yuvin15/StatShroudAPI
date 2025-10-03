@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static API.Models.MatchData;
+using Google.Cloud.Firestore;
 
 namespace API.Controllers
 {
@@ -21,10 +22,14 @@ namespace API.Controllers
     public class RiotController : Controller
     {
         public string api;
+        private readonly FirestoreDb _firestoreDb;
         public RiotController(IConfiguration config)
         {
             api = config["RiotAPI:Token"];
+            _firestoreDb = FirestoreDb.Create("leaguestats-9a390");
         }
+
+
 
         // AI made my life easy here
         public Dictionary<int, string> RuneImagePaths = new()
@@ -1612,6 +1617,57 @@ namespace API.Controllers
             //    serverStatusList.Add(serverStatus);
             //}
 
+        }
+
+        [HttpPost("AddChampionHelp")]
+        public async Task<ActionResult<string>> AddChampionHelp(string championName, [FromBody]ChampionHelpTextDTO championText) 
+        {
+            try 
+            {
+                if (championText == null || string.IsNullOrEmpty(championText.HelpText)) 
+                {
+                    return BadRequest("Empty/Value missing");
+                }
+
+                // Reference to the champion node
+                CollectionReference championCollection = _firestoreDb.Collection("championHelp").Document(championName).Collection("entries");
+
+                // Add a new help entry
+                await championCollection.AddAsync(new
+                {
+                    championText.Author,
+                    championText.HelpText,
+                    CreatedTime = Timestamp.GetCurrentTimestamp()
+                });
+
+                return Ok("Champion help added successfully!");
+            }
+            catch(Exception ex) 
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
+            
+        }
+
+        [HttpGet("GetChampionHelp/{championName}")]
+        public async Task<ActionResult<List<object>>> GetChampionHelp(string championName)
+        {
+            // Reference the subcollection for this champion
+            var championCollection = _firestoreDb.Collection("championHelp")
+                                                 .Document(championName)
+                                                 .Collection("entries");
+
+            // Get all documents in the subcollection
+            var snapshot = await championCollection.GetSnapshotAsync();
+            if (snapshot.Count == 0) 
+            {
+                return NoContent();
+            }
+
+            var results = snapshot.Documents.Select(x => x.ToDictionary()).ToList();
+
+            return Ok(results);
+                
         }
 
     }

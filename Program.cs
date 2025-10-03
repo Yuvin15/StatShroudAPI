@@ -15,6 +15,9 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod());
 });
 
+var pathToJson = Path.Combine(AppContext.BaseDirectory, "leaguestats-9a390-firebase-adminsdk-fbsvc-761d832650.json");
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", pathToJson);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -1661,7 +1661,9 @@ namespace API.Controllers
             var snapshot = await championCollection.GetSnapshotAsync();
             if (snapshot.Count == 0) 
             {
-                return NoContent();
+                //I had no content but it didnt work cause the way my frontend worked broke it, so I just returned an empty object
+                //to my frontend so my .parse can still work
+                return Ok(new List<object>());
             }
 
             var results = snapshot.Documents.Select(x => x.ToDictionary()).ToList();

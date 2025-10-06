@@ -1,8 +1,10 @@
 ﻿using API.Models;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -13,7 +15,6 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static API.Models.MatchData;
-using Google.Cloud.Firestore;
 
 namespace API.Controllers
 {
@@ -278,48 +279,6 @@ namespace API.Controllers
                 "me" => "europe"
             };
 
-            // Fetch data needed for account details
-            var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
-            var request = new RestRequest("", Method.Get);
-            request.AddHeader("X-Riot-Token", api);
-            var restResponse = await url.ExecuteAsync(request);
-            var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
-
-            var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
-            var newRequest = new RestRequest("", Method.Get);
-            newRequest.AddHeader("X-Riot-Token", api);
-            var newRestResponse = await url.ExecuteAsync(newRequest);
-            var newResponse = JsonConvert.DeserializeObject<NewRiotAccount>(newRestResponse.Content);
-
-            var accountUrl = new RestClient($"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{response.puuid}");
-            var accountRequest = new RestRequest("", Method.Get);
-            accountRequest.AddHeader("X-Riot-Token", api);
-            var accountResponse = await accountUrl.ExecuteAsync(accountRequest);
-            var accountResponse2 = JsonConvert.DeserializeObject<RiotAccount>(accountResponse.Content);
-
-            if (accountResponse2.puuid == null)
-            {
-                return NotFound("Account not found");
-            }
-
-            // Get ranked data
-            var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
-            var rankedRequest = new RestRequest("", Method.Get);
-            rankedRequest.AddHeader("X-Riot-Token", api); 
-            var rankedResponse = await rankedUrl.ExecuteAsync(rankedRequest);
-            var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
-            var allPlayerDetails = new List<PlayerMatchHistory>();
-
-            //Match ids
-            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?startTime=1735689600&start=0&count=20");
-            var matchRequest = new RestRequest("", Method.Get);
-            matchRequest.AddHeader("X-Riot-Token", api);
-            var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
-            var matchResponse2 = JsonConvert.DeserializeObject<dynamic>(matchResponse.Content);
-
-            List<string> gameWinnerCheck = new List<string>();
-            List<string> reverseGameWinnerCheck = new List<string>();
-
             string whatStreak = "";
             string farmStatus = "";
             string gameDuration = "";
@@ -330,6 +289,89 @@ namespace API.Controllers
             List<int> farmDeficit = new List<int>();
             List<string> lane = new List<string>();
             List<string> otpCheck = new List<string>();
+
+            // Fetch data needed for account details
+            var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
+            var request = new RestRequest("", Method.Get);
+            request.AddHeader("X-Riot-Token", api);
+            var restResponse = await url.ExecuteAsync(request);
+            var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
+
+            if (response.puuid == null)
+            {
+                return NotFound("Account not found");
+            }
+
+            /*Old details 
+            //Need this because I need to get the details for the player from their puuid
+            var accountUrl = new RestClient($"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{response.puuid}");
+            var accountRequest = new RestRequest("", Method.Get);
+            accountRequest.AddHeader("X-Riot-Token", api);
+            var accountResponse = await accountUrl.ExecuteAsync(accountRequest);
+            var accountResponse2 = JsonConvert.DeserializeObject<RiotAccount>(accountResponse.Content);
+            */
+
+            //Match ids
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?startTime=1735689600&start=0&count=20");
+            var matchRequest = new RestRequest("", Method.Get);
+            matchRequest.AddHeader("X-Riot-Token", api);
+            var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
+            var matchResponse2 = JsonConvert.DeserializeObject<List<string>>(matchResponse.Content);
+
+            var allPlayerDetails = new List<PlayerMatchHistory>();
+            List<string> gameWinnerCheck = new List<string>();
+            List<string> reverseGameWinnerCheck = new List<string>();
+
+            //Need this because I need tp get the stats for the player from their puuid
+            var accountDetailsTask = Task.Run(async () =>
+            {
+                var accountUrl = new RestClient($"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{response.puuid}");
+                var accountRequest = new RestRequest("", Method.Get);
+                accountRequest.AddHeader("X-Riot-Token", api);
+                var accountResponse = await accountUrl.ExecuteAsync(accountRequest);
+                var accountResponse2 = JsonConvert.DeserializeObject<RiotAccount>(accountResponse.Content);
+
+                return accountResponse2;
+            });
+
+            // Get account name
+            var accountNameTask = Task.Run(async () =>
+            {
+                var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
+                var newRequest = new RestRequest("", Method.Get);
+                newRequest.AddHeader("X-Riot-Token", api);
+                var newRestResponse = await newUrl.ExecuteAsync(newRequest);
+                var newResponse = JsonConvert.DeserializeObject<NewRiotAccount>(newRestResponse.Content);
+
+                return newResponse;
+            });
+
+            // Get ranked data
+            var rankedDetailsTask = Task.Run(async () =>
+            {
+                var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
+                var rankedRequest = new RestRequest("", Method.Get);
+                rankedRequest.AddHeader("X-Riot-Token", api);
+                var rankedResponse = await rankedUrl.ExecuteAsync(rankedRequest);
+                var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
+
+                return rankedResponse2;
+            });
+
+
+            await Task.WhenAll(accountDetailsTask, rankedDetailsTask, accountNameTask);
+
+            var accountDetails = accountDetailsTask.Result;
+            var rankedAccountDetails = rankedDetailsTask.Result;
+            var accountNameDetails = accountNameTask.Result;
+
+            /*Old Get ranked data
+            var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
+            var rankedRequest = new RestRequest("", Method.Get);
+            rankedRequest.AddHeader("X-Riot-Token", api); 
+            var rankedResponse = await rankedUrl.ExecuteAsync(rankedRequest);
+            var rankedResponse2 = JsonConvert.DeserializeObject<List<RiotRanked>>(rankedResponse.Content);
+            */
 
             //Check every match id
             foreach (var item in matchResponse2)
@@ -391,7 +433,7 @@ namespace API.Controllers
                 otpCheck.Add(champName);
 
                 //Check solo queue rank cause thats the rank people check the most
-                var SoloRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5");
+                var SoloRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5");
                 string rank = SoloRank?.tier?.ToLower() switch
                 {
                     "unranked" => "Unranked",
@@ -448,6 +490,7 @@ namespace API.Controllers
                 allPlayerDetails.Add(uniqueDetails);
             }
 
+            //Check the player's stats for their last few games
             int goodFarmCheck = 0;
 
             //Check for loss streak or win streak
@@ -575,13 +618,13 @@ namespace API.Controllers
 
             var playerDetails = new RiotAccountDetails
             {
-                gameName = $"{newResponse.gameName}#{newResponse.tagLine}",
-                summonerLevel = accountResponse2.summonerLevel,
-                profileIconId = accountResponse2.profileIconId,
-                SoloRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null
+                gameName = $"{accountNameDetails.gameName}#{accountNameDetails.tagLine}",
+                summonerLevel = accountDetails.summonerLevel,
+                profileIconId = accountDetails.profileIconId,
+                SoloRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null
                                                         ? $"{solo.tier} {solo.rank} ({solo.leaguePoints} LP)"
                                                         : "Unranked",
-                FlexRank = rankedResponse2.FirstOrDefault(r => r?.queueType == "RANKED_FLEX_SR") is var flex && flex != null
+                FlexRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_FLEX_SR") is var flex && flex != null
                                                         ? $"{flex.tier} {flex.rank} ({flex.leaguePoints} LP)"
                                                         : "Unranked",
                 Achievments = playerAchievments,
@@ -1672,6 +1715,98 @@ namespace API.Controllers
                 
         }
 
+        [HttpGet("GetSimpleAccountDetails")]
+        public async Task<ActionResult<SimpleAccountDetails>> SimpleAccountDetails(string gameName, string tagLine, string region) 
+        {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe",
+                "me" => "europe"
+            };
+
+            // Fetch data needed for account details
+            var riotIdUrl = $"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}";
+            var riotClient = new RestClient(riotIdUrl);
+            var riotRequest = new RestRequest("", Method.Get);
+            riotRequest.AddHeader("X-Riot-Token", api);
+            var riotResponse = await riotClient.ExecuteAsync(riotRequest);
+            var riotAccount = JsonConvert.DeserializeObject<RiotAccount>(riotResponse.Content);
+
+            if (riotAccount?.puuid == null)
+            {
+                return NotFound("Account not found");
+            }
+
+            // Get player account details
+            var playerTask = Task.Run(async () =>
+            {
+                var accountUrl = new RestClient($"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{riotAccount.puuid}");
+                var accountRequest = new RestRequest("", Method.Get);
+                accountRequest.AddHeader("X-Riot-Token", api);
+                var response = await accountUrl.ExecuteAsync(accountRequest);
+                return JsonConvert.DeserializeObject<RiotAccount>(response.Content);
+            });
+
+            //Get player account name
+            var accountNameTask = Task.Run(async () =>
+            {
+                var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
+                var newRequest = new RestRequest("", Method.Get);
+                newRequest.AddHeader("X-Riot-Token", api);
+                var newRestResponse = await newUrl.ExecuteAsync(newRequest);
+                return JsonConvert.DeserializeObject<NewRiotAccount>(newRestResponse.Content);
+            });
+
+            //Get player ranked details
+            var rankedTask = Task.Run(async () =>
+            {
+                var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{riotAccount.puuid}");
+                var rankedRequest = new RestRequest("", Method.Get);
+                rankedRequest.AddHeader("X-Riot-Token", api);
+                var response = await rankedUrl.ExecuteAsync(rankedRequest);
+                return JsonConvert.DeserializeObject<List<RiotRanked>>(response.Content);
+            });
+
+            await Task.WhenAll(playerTask, rankedTask, accountNameTask);
+
+            var account = playerTask.Result;
+            var ranked = rankedTask.Result;
+            var accountDetails = accountNameTask.Result;
+
+            if (account?.puuid == null)
+            {
+                return NotFound("Account not found");
+            }
+
+            return new SimpleAccountDetails
+            {
+                gameName = $"{accountDetails.gameName}#{accountDetails.tagLine}",
+                summonerLevel = account.summonerLevel,
+                profileIconId = account.profileIconId,
+                SoloRank = ranked.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null
+                           ? $"{solo.tier} {solo.rank} ({solo.leaguePoints} LP)"
+                           : "Unranked",
+                FlexRank = ranked.FirstOrDefault(r => r?.queueType == "RANKED_FLEX_SR") is var flex && flex != null
+                           ? $"{flex.tier} {flex.rank} ({flex.leaguePoints} LP)"
+                           : "Unranked",
+            };
+
+        }
     }
 
 }

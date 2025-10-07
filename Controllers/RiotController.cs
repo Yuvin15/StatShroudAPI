@@ -295,7 +295,7 @@ namespace API.Controllers
             var request = new RestRequest("", Method.Get);
             request.AddHeader("X-Riot-Token", api);
             var restResponse = await url.ExecuteAsync(request);
-            var response = JsonConvert.DeserializeObject<RiotAccount>(restResponse.Content);
+            var response = JsonConvert.DeserializeObject<NewRiotAccount>(restResponse.Content);
 
             if (response.puuid == null)
             {
@@ -334,7 +334,7 @@ namespace API.Controllers
                 return accountResponse2;
             });
 
-            // Get account name
+            /* Get account name
             var accountNameTask = Task.Run(async () =>
             {
                 var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
@@ -345,6 +345,7 @@ namespace API.Controllers
 
                 return newResponse;
             });
+            */
 
             // Get ranked data
             var rankedDetailsTask = Task.Run(async () =>
@@ -359,11 +360,11 @@ namespace API.Controllers
             });
 
 
-            await Task.WhenAll(accountDetailsTask, rankedDetailsTask, accountNameTask);
+            await Task.WhenAll(accountDetailsTask, rankedDetailsTask /*accountNameTask*/);
 
             var accountDetails = accountDetailsTask.Result;
             var rankedAccountDetails = rankedDetailsTask.Result;
-            var accountNameDetails = accountNameTask.Result;
+            //var accountNameDetails = accountNameTask.Result;
 
             /*Old Get ranked data
             var rankedUrl = new RestClient($"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{response.puuid}");
@@ -618,7 +619,7 @@ namespace API.Controllers
 
             var playerDetails = new RiotAccountDetails
             {
-                gameName = $"{accountNameDetails.gameName}#{accountNameDetails.tagLine}",
+                gameName = $"{response.gameName}#{response.tagLine}",
                 summonerLevel = accountDetails.summonerLevel,
                 profileIconId = accountDetails.profileIconId,
                 SoloRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null
@@ -1478,14 +1479,16 @@ namespace API.Controllers
         }
 
         /// <summary>
-        /// Need to work on this one to get the macth timeline data
+        /// Putting on a hold
         /// </summary>
         /// <param name="region"></param>
         /// <param name="matchID"></param>
         /// <returns></returns>
-        [HttpGet("GetMatchTimeLine")]
-        public async Task<ActionResult<string>> GetTimeLine(string region, string matchID)
+        [HttpGet("GetMatchTimeLine/{matchID}/{region}")]
+        public async Task<ActionResult<string>> GetTimeLine(string matchID, string region)
         {
+            //Putting on a hold 
+
             return null;
         }
 
@@ -1745,7 +1748,7 @@ namespace API.Controllers
             var riotRequest = new RestRequest("", Method.Get);
             riotRequest.AddHeader("X-Riot-Token", api);
             var riotResponse = await riotClient.ExecuteAsync(riotRequest);
-            var riotAccount = JsonConvert.DeserializeObject<RiotAccount>(riotResponse.Content);
+            var riotAccount = JsonConvert.DeserializeObject<NewRiotAccount>(riotResponse.Content);
 
             if (riotAccount?.puuid == null)
             {
@@ -1762,7 +1765,7 @@ namespace API.Controllers
                 return JsonConvert.DeserializeObject<RiotAccount>(response.Content);
             });
 
-            //Get player account name
+            /*Get player account name
             var accountNameTask = Task.Run(async () =>
             {
                 var newUrl = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
@@ -1771,7 +1774,7 @@ namespace API.Controllers
                 var newRestResponse = await newUrl.ExecuteAsync(newRequest);
                 return JsonConvert.DeserializeObject<NewRiotAccount>(newRestResponse.Content);
             });
-
+            */
             //Get player ranked details
             var rankedTask = Task.Run(async () =>
             {
@@ -1782,11 +1785,11 @@ namespace API.Controllers
                 return JsonConvert.DeserializeObject<List<RiotRanked>>(response.Content);
             });
 
-            await Task.WhenAll(playerTask, rankedTask, accountNameTask);
+            await Task.WhenAll(playerTask, rankedTask/*, accountNameTask*/);
 
             var account = playerTask.Result;
             var ranked = rankedTask.Result;
-            var accountDetails = accountNameTask.Result;
+            //var accountDetails = accountNameTask.Result;
 
             if (account?.puuid == null)
             {
@@ -1795,7 +1798,7 @@ namespace API.Controllers
 
             return new SimpleAccountDetails
             {
-                gameName = $"{accountDetails.gameName}#{accountDetails.tagLine}",
+                gameName = $"{riotAccount.gameName}#{riotAccount.tagLine}",
                 summonerLevel = account.summonerLevel,
                 profileIconId = account.profileIconId,
                 SoloRank = ranked.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null

@@ -30,8 +30,6 @@ namespace API.Controllers
             _firestoreDb = FirestoreDb.Create("leaguestats-9a390");
         }
 
-
-
         // AI made my life easy here
         public Dictionary<int, string> RuneImagePaths = new()
         {

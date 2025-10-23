@@ -1470,10 +1470,38 @@ namespace API.Controllers
             //return null;
         }
 
-        [HttpGet("GetTopPlayersPerRank")]
-        public async Task<ActionResult<string>> GetTopPlayers(string championName) 
+        [HttpGet("GetTopPlayers")]
+        public async Task<ActionResult<List<Leaderboard>>> GetTopPlayers(string region) 
         {
-            return null;
+            List<Leaderboard> leaderboards = new List<Leaderboard>();
+
+            var soloQueue = Task.Run(async () =>
+            {
+                var solourl = $"https://{region}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5";
+                var soloRestClient = new RestClient(solourl);
+                var soloRestRequest = new RestRequest("", Method.Get);
+                soloRestRequest.AddHeader("X-Riot-Token", api);
+                var soloRestResponse = await soloRestClient.ExecuteAsync(soloRestRequest);
+                var soloLearboardEntries = JsonConvert.DeserializeObject<Leaderboard>(soloRestResponse.Content);
+
+                leaderboards.Add(soloLearboardEntries);
+            });
+
+            var flexQueue = Task.Run(async () =>
+            {
+                var flexurl = $"https://{region}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_FLEX_SR";
+                var flexRestClient = new RestClient(flexurl);
+                var flexRestRequest = new RestRequest("", Method.Get);
+                flexRestRequest.AddHeader("X-Riot-Token", api);
+                var flexRestResponse = await flexRestClient.ExecuteAsync(flexRestRequest);
+                var flexLearboardEntries = JsonConvert.DeserializeObject<Leaderboard>(flexRestResponse.Content);
+
+                leaderboards.Add(flexLearboardEntries);
+            });
+
+            await Task.WhenAll(soloQueue, flexQueue);
+
+            return Ok(leaderboards);
         }
 
         /// <summary>

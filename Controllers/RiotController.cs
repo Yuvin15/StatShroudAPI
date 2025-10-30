@@ -1,4 +1,5 @@
 ﻿using API.Models;
+using FirebaseAdmin.Messaging;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -1836,6 +1837,94 @@ namespace API.Controllers
             };
 
         }
+        
+        [HttpGet("IsPlayerInGame")]
+        public async Task<ActionResult<LiveGameDTO>> IsPlayerInGame(string gameName, string tagLine, string region)
+        {
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe",
+                "me" => "europe"
+            };
+
+            var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
+            var patchRequest = new RestRequest("", Method.Get);
+            var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
+            var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
+            
+            var championUrl = new RestClient($"https://ddragon.leagueoflegends.com/cdn/{patchResponse}/data/en_US/champion.json");
+            var championRequest = new RestRequest("", Method.Get);
+            var championRestResponse = await championUrl.ExecuteAsync(championRequest);
+            var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
+            
+            var riotIdUrl = $"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}";
+            var riotClient = new RestClient(riotIdUrl);
+            var riotRequest = new RestRequest("", Method.Get);
+            riotRequest.AddHeader("X-Riot-Token", api);
+            var riotResponse = await riotClient.ExecuteAsync(riotRequest);
+            var riotAccount = JsonConvert.DeserializeObject<NewRiotAccount>(riotResponse.Content);
+
+            var liveUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{riotAccount.puuid}";
+            var liveClient = new RestClient(liveUrl);
+            var liveRequest = new RestRequest("", Method.Get);
+            liveRequest.AddHeader("X-Riot-Token", api);
+            var liveResponse = await liveClient.ExecuteAsync(liveRequest);
+            var liveAccount = JsonConvert.DeserializeObject<LiveGame>(liveResponse.Content);
+
+            if (liveAccount.gameId == 0) 
+            {
+                return NotFound("Not in live game");
+            }
+
+            LiveGameDTO LiveGame = new LiveGameDTO
+            {
+
+                GameID = liveAccount.gameId.ToString(),
+                MapID = liveAccount.mapId.ToString(),
+                gameMode = liveAccount.gameMode,
+                gameType = liveAccount.gameType,
+                gameQueueConfigId = liveAccount.gameQueueConfigId.ToString(),
+                participants = liveAccount.participants.Select(p =>
+                {
+                    var champPlayed = championResponse?.data.Values.FirstOrDefault(i => i.key == p.championId.ToString());
+                    string champName = champPlayed?.id;
+
+                    if (champName == "Wukong") champName = "MonkeyKing";
+                    else if (champName == "FiddleSticks") champName = "Fiddlesticks";
+
+                    return new ParticipantDTO
+                    {
+                        teamId = p.teamId.ToString(),
+                        spell1Id = p.spell1Id.ToString(),
+                        spell2Id = p.spell2Id.ToString(),
+                        championId = champName,
+                        profileIconId = p.profileIconId.ToString(),
+                        riotId = p.riotId,
+                        bot = p.bot
+                    };
+                }).ToList()
+            };
+
+            return LiveGame;
+
+        }
+
+
     }
 
 }

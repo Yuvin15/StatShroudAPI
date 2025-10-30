@@ -5,7 +5,7 @@ namespace API.Models
 {
     public class LiveGame
     {
-        public int gameId { get; set; }
+        public long gameId { get; set; }
         public int mapId { get; set; }
         public string gameMode { get; set; }
         public string gameType { get; set; }

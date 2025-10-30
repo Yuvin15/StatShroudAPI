@@ -1542,19 +1542,33 @@ namespace API.Controllers
                     var itemFrom = new List<int>();
                     var itemTo = new List<int>();
 
-                    foreach (var subItem in item.from)
+                    foreach (var subItemId in item.from)
                     {
-                        if (subItem.ToString().Length == 4)
+                        var fromSubItemId = itemResponse.FirstOrDefault(x => x.id == subItemId);
+
+                        if (fromSubItemId != null &&
+                            fromSubItemId.inStore == true &&
+                            !fromSubItemId.iconPath.Contains("Strawberry") &&
+                            fromSubItemId.requiredChampion == "" &&
+                            fromSubItemId.id.ToString().Length == 4 &&
+                            fromSubItemId.displayInItemSets == true)
                         {
-                            itemFrom.Add(subItem);
+                            itemFrom.Add(fromSubItemId.id);
                         }
                     }
 
-                    foreach (var subItem in item.to)
+                    foreach (var subItemId in item.to)
                     {
-                        if (subItem.ToString().Length == 4)
+                        var toSubItemId = itemResponse.FirstOrDefault(x => x.id == subItemId);
+
+                        if (toSubItemId != null &&
+                            toSubItemId.inStore == true &&
+                            !toSubItemId.iconPath.Contains("Strawberry") &&
+                            toSubItemId.requiredChampion == "" &&
+                            toSubItemId.id.ToString().Length == 4 &&
+                            toSubItemId.displayInItemSets == true)
                         {
-                            itemTo.Add(subItem);
+                            itemTo.Add(toSubItemId.id);
                         }
                     }
 

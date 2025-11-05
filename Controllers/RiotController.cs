@@ -186,6 +186,8 @@ namespace API.Controllers
             { 440, "Ranked Flex" },
             { 450, "ARAM" },
             { 460, "3v3 Blind Pick" },
+            { 470, "3v3 Ranked Flex" },
+            { 480, "SwiftPlay" },
             { 490, "Normal (Quickplay)" },
             { 600, "Blood Hunt Assassin" },
             { 610, "Dark Star: Singularity" },
@@ -234,9 +236,8 @@ namespace API.Controllers
             { 2000, "Tutorial 1" },
             { 2010, "Tutorial 2" },
             { 2020, "Tutorial 3" },
-            { 3140, "Practice tool" },
             { 3100, "Custom Game" },
-            { 480, "SwiftPlay"}
+            { 3140, "Practice tool" }
         };
 
         public Dictionary<string, int> FarmPerRank = new Dictionary<string, int>
@@ -289,6 +290,12 @@ namespace API.Controllers
             List<string> lane = new List<string>();
             List<string> otpCheck = new List<string>();
 
+            //To get the wr for each champion recently played
+            int totalGamesplayed = 0;
+            Dictionary<string, List<string>> champWinOrLose = new Dictionary<string, List<string>>();
+            //Dictionary for champion and their wr in recent games
+            Dictionary<string, double> recentWR = new Dictionary<string, double>();
+
             // Fetch data needed for account details
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
@@ -311,11 +318,14 @@ namespace API.Controllers
             */
 
             //Match ids
-            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?startTime=1735689600&start=0&count=20");
+            var matchUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/{response.puuid}/ids?start=0&count=20");
             var matchRequest = new RestRequest("", Method.Get);
             matchRequest.AddHeader("X-Riot-Token", api);
             var matchResponse = await matchUrl.ExecuteAsync(matchRequest);
             var matchResponse2 = JsonConvert.DeserializeObject<List<string>>(matchResponse.Content);
+
+            //Just a double sure cause its possible for someone to play less than 20
+            totalGamesplayed = matchResponse2.Count;
 
             var allPlayerDetails = new List<PlayerMatchHistory>();
             List<string> gameWinnerCheck = new List<string>();
@@ -357,7 +367,6 @@ namespace API.Controllers
 
                 return rankedResponse2;
             });
-
 
             await Task.WhenAll(accountDetailsTask, rankedDetailsTask /*accountNameTask*/);
 
@@ -431,6 +440,11 @@ namespace API.Controllers
                 }
 
                 otpCheck.Add(champName);
+
+                if (!champWinOrLose.ContainsKey(champName))
+                    champWinOrLose[champName] = new List<string>();
+
+                champWinOrLose[champName].Add(gameWinner);
 
                 //Check solo queue rank cause thats the rank people check the most
                 var SoloRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5");
@@ -616,11 +630,20 @@ namespace API.Controllers
                 OTPStatus = otpOrNot
             };
 
+            foreach (var champ in champWinOrLose.Keys)
+            {
+                int wins = champWinOrLose[champ].Count(result => result == "Victory");
+                int total = champWinOrLose[champ].Count;
+                double winRate = (double)wins / total * 100;
+                recentWR[champ] = Math.Round(winRate);
+            }
+
             var playerDetails = new RiotAccountDetails
             {
                 gameName = $"{response.gameName}#{response.tagLine}",
                 summonerLevel = accountDetails.summonerLevel,
                 profileIconId = accountDetails.profileIconId,
+                recentGamesWinRate = recentWR,
                 SoloRank = rankedAccountDetails.FirstOrDefault(r => r?.queueType == "RANKED_SOLO_5x5") is var solo && solo != null
                                                         ? $"{solo.tier} {solo.rank} ({solo.leaguePoints} LP)"
                                                         : "Unranked",
@@ -946,6 +969,8 @@ namespace API.Controllers
         [HttpGet("GetSingleMatchDetailsForNormals")]
         public async Task<ActionResult<MatchStatsNew>> GetMatchDetails(string region, string matchID) 
         {
+            Dictionary<string, string> puuidToChampDict = new Dictionary<string, string>();
+
             // This is for DD to get the latest patch version and all characters to that patch
             var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
             var patchRequest = new RestRequest("", Method.Get);
@@ -982,12 +1007,44 @@ namespace API.Controllers
             var newMatchData = new MatchStatsNew();
             var playersInMatch = new List<PlayerMatchDetails>();
 
+            /* 
+            /// Old way
             var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
             var matchDataRequest = new RestRequest("", Method.Get);
             matchDataRequest.AddHeader("X-Riot-Token", api);
             var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
             var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
+            */
+            
+            var matchDataTask = Task.Run(async () =>
+            {
+                var matchDataUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}");
+                var matchDataRequest = new RestRequest("", Method.Get);
+                matchDataRequest.AddHeader("X-Riot-Token", api);
+                var matchDataRestResponse = await matchDataUrl.ExecuteAsync(matchDataRequest);
+                var matchDataResponse = JsonConvert.DeserializeObject<MatchData>(matchDataRestResponse.Content);
 
+                return matchDataResponse;
+            });
+
+            var timelineTask = Task.Run(async () =>
+            {
+            
+                var timelineUrl = new RestClient($"https://{region}.api.riotgames.com/lol/match/v5/matches/{matchID}/timeline");
+                var timelineRequest = new RestRequest("", Method.Get);
+                timelineRequest.AddHeader("X-Riot-Token", api);
+                var timelineRestResponse = await timelineUrl.ExecuteAsync(timelineRequest);
+                var timelineResponse = JsonConvert.DeserializeObject<Timeline>(timelineRestResponse.Content);
+
+                return timelineResponse;
+            });
+
+            await Task.WhenAll(matchDataTask, timelineTask);
+
+            var matchDataResponse = matchDataTask.Result;
+            var timeLineResponse = timelineTask.Result;
+
+            List<string> timelineData = new List<string>();
 
             // Nullable for people that dont ban and swiftplay and aram
             var blueTeamBans = matchDataResponse.info.teams.FirstOrDefault(x => x.teamId == 100)?.bans;
@@ -1136,6 +1193,8 @@ namespace API.Controllers
                 {
                     champName = subItem.championName;
                 }
+
+                puuidToChampDict.Add(subItem.puuid, champName);
 
                 var playerDetails = new PlayerMatchDetails
                 {
@@ -1512,11 +1571,37 @@ namespace API.Controllers
         /// <param name="matchID"></param>
         /// <returns></returns>
         [HttpGet("GetMatchTimeLine/{matchID}/{region}")]
-        public async Task<ActionResult<string>> GetTimeLine(string matchID, string region)
+        public async Task<ActionResult<Timeline>> GetTimeLine(string matchID, string region)
         {
-            //Putting on a hold 
+            string mmRegion = region.ToLower() switch
+            {
+                "br1" => "americas",
+                "eun1" => "europe",
+                "euw1" => "europe",
+                "jp1" => "asia",
+                "kr" => "asia",
+                "la1" => "americas",
+                "la2" => "americas",
+                "na1" => "americas",
+                "oc1" => "sea",
+                "ph2" => "sea",
+                "sg2" => "sea",
+                "th2" => "sea",
+                "tr1" => "europe",
+                "tw2" => "sea",
+                "vn2" => "sea",
+                "ru" => "europe",
+                "me" => "europe"
+            };
 
-            return null;
+            var timelineUrl = new RestClient($"https://{mmRegion}.api.riotgames.com/lol/match/v5/matches/{matchID}/timeline");
+            var timelineRequest = new RestRequest("", Method.Get);
+            timelineRequest.AddHeader("X-Riot-Token", api);
+            var timelineRestResponse = await timelineUrl.ExecuteAsync(timelineRequest);
+            var timelineResponse = JsonConvert.DeserializeObject<Timeline>(timelineRestResponse.Content);
+
+            return timelineResponse;
+
         }
 
         [HttpGet("GetItems")]

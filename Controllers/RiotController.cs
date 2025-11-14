@@ -1520,9 +1520,28 @@ namespace API.Controllers
                 ChampName = $"{champ.name} {champ.title}",
                 ChampionLore = (string)champ.lore,
 
-                ChampSkins = champSkins
+                ChampSkins = champSkins,
 
-
+                Hp = champ.stats.hp,
+                HpPerLevel = champ.stats.hpperlevel,
+                Mp = champ.stats.mp,
+                MpPerLevel = champ.stats.mpperlevel,
+                MoveSpeed = champ.stats.movespeed,
+                Armor = champ.stats.armor,
+                ArmorPerLevel = champ.stats.armorperlevel,
+                SpellBlock = champ.stats.spellblock,
+                SpellBlockPerLevel = champ.stats.spellblockperlevel,
+                AttackRange = champ.stats.attackrange,
+                HpRegen = champ.stats.hpregen,
+                HpRegenPerLevel = champ.stats.hpregenperlevel,
+                MpRegen = champ.stats.mpregen,
+                MpRegenPerLevel = champ.stats.mpregenperlevel,
+                Crit = champ.stats.crit,
+                CritPerLevel = champ.stats.critperlevel,
+                AttackDamage = champ.stats.attackdamage,
+                AttackDamagePerLevel = champ.stats.attackdamageperlevel,
+                AttackSpeedPerLevel = champ.stats.attackspeedperlevel,
+                AttackSpeed = champ.stats.attackspeed
             };
 
             //return championData;
@@ -2023,6 +2042,39 @@ namespace API.Controllers
 
         }
 
+        [HttpGet("GetAllChampions")]
+        public async Task<ActionResult<List<AllChampionsDTO>>> GetAllChampions() 
+        {
+            // This is for DD to get the latest patch version and all characters to that patch
+            var patchUrl = new RestClient("https://ddragon.leagueoflegends.com/api/versions.json");
+            var patchRequest = new RestRequest("", Method.Get);
+            var patchRestResponse = await patchUrl.ExecuteAsync(patchRequest);
+            var patchResponse = JsonConvert.DeserializeObject<List<string>>(patchRestResponse.Content).FirstOrDefault();
+
+            var championUrl = new RestClient($"https://ddragon.leagueoflegends.com/cdn/{patchResponse}/data/en_US/champion.json");
+            var championRequest = new RestRequest("", Method.Get);
+            var championRestResponse = await championUrl.ExecuteAsync(championRequest);
+            var championResponse = JsonConvert.DeserializeObject<Champions>(championRestResponse.Content);
+
+            List<AllChampionsDTO> allChampions = new List<AllChampionsDTO>();
+
+            foreach (var item in championResponse.data)
+            {
+                allChampions.Add(new AllChampionsDTO
+                {
+                    Name = item.Value.name,
+                    Image = item.Value.id
+                });
+            }
+
+            //AllChampionsDTO allChampions = new AllChampionsDTO
+            //{
+            //    Name = string.Join(",", championResponse.data.Keys),
+            //    Image = string.Join(",", championResponse.data.Values.Select(c => c.image.full))
+            //};
+
+            return allChampions;
+        }
 
     }
 

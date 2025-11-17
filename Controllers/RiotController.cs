@@ -16,6 +16,7 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static API.Models.MatchData;
+using static API.Models.RiotChallenges;
 
 namespace API.Controllers
 {
@@ -659,7 +660,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetChallenges")]
-        public async Task<ActionResult<RiotChallenges>> GetChallenges(string gameName, string tagLine, string region)
+        public async Task<ActionResult<dynamic>> GetChallenges(string gameName, string tagLine, string region)
         {
             var url = new RestClient($"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}");
             var request = new RestRequest("", Method.Get);
@@ -673,7 +674,55 @@ namespace API.Controllers
             var challengesResponse = await challengesURL.ExecuteAsync(challengesRequest);
             var challengesResponse2 = JsonConvert.DeserializeObject<RiotChallenges>(challengesResponse.Content);
 
-            return Ok(challengesResponse2);
+            var cDragURL = new RestClient($"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/challenges.json");
+            var cDragRequest = new RestRequest("", Method.Get);
+            var cDragResponse = await cDragURL.ExecuteAsync(cDragRequest);
+            var cDragResponse2 = JsonConvert.DeserializeObject<CommunityChallenges>(cDragResponse.Content);
+
+            var detailLookup = cDragResponse2.challenges
+            .Where(kvp => kvp.Value != null)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => new {
+                    kvp.Value.name,
+                    kvp.Value.description
+                }
+            );
+
+            List<string> ignoredChallenges = new List<string>()
+            {
+                "imagination",
+                "collection",
+                "veterancy",
+                "expertise",
+                "teamwork"
+            };
+                 
+            
+            var challengeList = challengesResponse2.challenges
+            .Where(c => detailLookup.ContainsKey(c.challengeId) &&
+                        !ignoredChallenges.Contains(detailLookup[c.challengeId].name.ToLower()))
+            .Select(c => new {
+                c.challengeId,
+                detailLookup[c.challengeId].name,
+                detailLookup[c.challengeId].description,
+                c.level,
+                c.value,
+                c.percentile,
+                c.position,
+                c.playersInLevel
+            })
+            .ToList();
+
+            var result = new
+            {
+                challengesResponse2.totalPoints,
+                challengesResponse2.categoryPoints,
+                challenges = challengeList
+            };
+
+            return Ok(result);
+
         }
         
         [HttpGet("GetHistory")]

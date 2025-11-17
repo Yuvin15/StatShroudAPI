@@ -697,20 +697,19 @@ namespace API.Controllers
                 "expertise",
                 "teamwork"
             };
-                 
             
             var challengeList = challengesResponse2.challenges
             .Where(c => detailLookup.ContainsKey(c.challengeId) &&
                         !ignoredChallenges.Contains(detailLookup[c.challengeId].name.ToLower()))
             .Select(c => new {
-                c.challengeId,
-                detailLookup[c.challengeId].name,
-                detailLookup[c.challengeId].description,
-                c.level,
-                c.value,
-                c.percentile,
-                c.position,
-                c.playersInLevel
+                id = c.challengeId,
+                name = detailLookup[c.challengeId].name,
+                description = detailLookup[c.challengeId].description,
+                level = c.level?.ToLower(),
+                value = c.value,
+                percentile = c.percentile,
+                position = c.position,
+                playersInLevel = c.playersInLevel
             })
             .ToList();
 

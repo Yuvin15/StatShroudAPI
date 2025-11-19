@@ -550,7 +550,7 @@ namespace API.Controllers
             }
             else if (goodFarmCheck >= (totalNonSupportGames * 0.6)) // 60% threshold
             {
-                farmStatus = "Player farmed above their ranked expectation in majority of their non-support games";
+                farmStatus = "Player farmed above their ranked expectation";
             }
             else if (goodFarmCheck >= (totalNonSupportGames * 0.3)) // 30% threshold
             {
@@ -579,15 +579,15 @@ namespace API.Controllers
 
             if (goodKDA > badKDA)
             {
-                playerSurvivability = "Player has a good Kill and Assist to Death ratio";
+                playerSurvivability = "Good Kill and Assist to Death ratio";
             }
             else if (goodKDA < badKDA)
             {
-                playerSurvivability = "Player has a bad Kill and Assist to Death ratio";
+                playerSurvivability = "Bad Kill and Assist to Death ratio";
             }
             else
             {
-                playerSurvivability = "Player has an average Kill and Assist to Death ratio";
+                playerSurvivability = "Average Kill and Assist to Death ratio";
             }
 
             //Checks if the player is an otp or not
@@ -601,7 +601,7 @@ namespace API.Controllers
 
             if (topChamp.Count >= 7)
             {
-                otpOrNot += $"Player OTP is {topChamp.Champ}";
+                otpOrNot += $"{topChamp.Champ} OTP";
 
                 if(topChamp.Champ == "Teemo") 
                 {
@@ -616,11 +616,11 @@ namespace API.Controllers
             }
             else if (topChamp.Count >= 5)
             {
-                otpOrNot += $"Player mains {topChamp.Champ}";
+                otpOrNot += $"Mains {topChamp.Champ}";
             }
             else
             {
-                otpOrNot += "Player plays a wide variety of champions";
+                otpOrNot += "Plays a wide variety of champions";
             }
 
             PlayerAchievments playerAchievments = new PlayerAchievments
@@ -691,16 +691,17 @@ namespace API.Controllers
 
             List<string> ignoredChallenges = new List<string>()
             {
-                "imagination",
-                "collection",
-                "veterancy",
-                "expertise",
-                "teamwork"
+                "IMAGINATION",
+                "COLLECTION",
+                "VETERANCY",
+                "EXPERTISE",
+                "TEAMWORK",
+                "CRYSTAL"
             };
             
             var challengeList = challengesResponse2.challenges
             .Where(c => detailLookup.ContainsKey(c.challengeId) &&
-                        !ignoredChallenges.Contains(detailLookup[c.challengeId].name.ToLower()))
+                        !ignoredChallenges.Contains(detailLookup[c.challengeId].name))
             .Select(c => new {
                 id = c.challengeId,
                 name = detailLookup[c.challengeId].name,
@@ -709,7 +710,16 @@ namespace API.Controllers
                 value = c.value,
                 percentile = c.percentile,
                 position = c.position,
-                playersInLevel = c.playersInLevel
+                playersInLevel = c.playersInLevel,
+                category = c.challengeId.ToString()[0] switch
+                {
+                    '1' => "Imagination",
+                    '2' => "Expertise",
+                    '3' => "Veterancy",
+                    '4' => "Expertise",
+                    '5' => "Teamwork",
+                    _ => "Other"
+                }
             })
             .ToList();
 
@@ -2076,8 +2086,8 @@ namespace API.Controllers
                     return new ParticipantDTO
                     {
                         teamId = p.teamId.ToString(),
-                        spell1Id = p.spell1Id.ToString(),
-                        spell2Id = p.spell2Id.ToString(),
+                        spell1Id = SummonerSpells[p.spell1Id],
+                        spell2Id = SummonerSpells[p.spell2Id],
                         championId = champName,
                         profileIconId = p.profileIconId.ToString(),
                         riotId = p.riotId,

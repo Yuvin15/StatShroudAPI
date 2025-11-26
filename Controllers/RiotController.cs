@@ -2121,7 +2121,8 @@ namespace API.Controllers
                 allChampions.Add(new AllChampionsDTO
                 {
                     Name = item.Value.name,
-                    Image = item.Value.id
+                    Image = item.Value.id,
+                    Difficulty = item.Value.info.difficulty
                 });
             }
 
